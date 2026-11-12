@@ -12,6 +12,7 @@
 class SensorManager {
 public:
   double node_lat, node_lon;  // modify these, if you want to affect Advert location
+  bool position_valid = false; // A GPS fix or explicit manual position has been supplied.
   double node_altitude;       // altitude in meters
 
   SensorManager() { node_lat = 0; node_lon = 0; node_altitude = 0; }
@@ -35,6 +36,8 @@ public:
   // the GPS status icon.
   virtual bool isGpsDutySleeping() const { return false; }
   virtual int getAvailableLPPTypes(uint8_t* types, int max_count) const { return 0; }
+  virtual bool setGPSFromCLI(bool enabled) { return setSettingValue("gps", enabled ? "1" : "0"); }
+  virtual bool isGPSDetected() const { return false; }
 
   // Helper functions to manage setting by keys (useful in many places ...)
   const char* getSettingByKey(const char* key) {

@@ -58,6 +58,16 @@ public:
   #else
   EnvironmentSensorManager(){};
   #endif
+#ifdef PRIVATE_STATUS_REPORTER
+  bool setGPSFromCLI(bool enabled) override {
+    if (!gps_detected) return false;
+    gps_master_enabled = enabled;
+    if (enabled && !gps_active) { _location->drain(); start_gps(); }
+    else if (!enabled && gps_active) stop_gps();
+    return true;
+  }
+#endif
+  bool isGPSDetected() const override { return gps_detected; }
   bool begin() override;
   bool querySensors(uint8_t requester_permissions, CayenneLPP& telemetry) override;
   #if ENV_INCLUDE_GPS || defined(ENV_INCLUDE_BME680_BSEC)

@@ -2,6 +2,10 @@
 #include "MsgExpand.h"
 #include "GeoUtils.h"
 #include "Features.h"
+#ifdef PRIVATE_STATUS_REPORTER
+#include "TrackerProtocol.h"
+#include "TrackerAudio.h"
+#endif
 
 #include <Arduino.h> // needed for PlatformIO
 #include <Mesh.h>
@@ -885,6 +889,14 @@ void MyMesh::sendFloodScoped(const ContactInfo& recipient, mesh::Packet* pkt, ui
 void MyMesh::sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pkt, uint32_t delay_millis) {
   if (apcActive()) apcTrackFloodSend(pkt);   // listen for a repeater echo to drive APC (channels have no ACK)
   trackRelaySend(pkt);                          // and for the UI "relayed" marker
+#ifdef TECHO_STATUS_LEDS
+  if (building_status) {
+    auto& pending = status_led_packets[next_status_led_packet++ % 16];
+    pending.packet = pkt;
+    pkt->calculatePacketHash(pending.hash);
+  }
+#endif
+  // TODO: have per-channel send_scope
   if (send_unscoped) {
     sendFlood(pkt, delay_millis, _prefs.path_hash_mode + 1);  // app has explicitly requested un-scoped
   } else if (!send_scope.isNull()) {
@@ -973,6 +985,9 @@ void MyMesh::onSignedMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uin
 
 void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packet *pkt, uint32_t timestamp,
                                   const char *text) {
+#ifdef PRIVATE_STATUS_REPORTER
+  handleTrackerMessage(channel, pkt, text);
+#endif
   int i = 0;
   if (app_target_ver >= 3) {
     out_frame[i++] = RESP_CODE_CHANNEL_MSG_RECV_V3;
@@ -1015,13 +1030,17 @@ void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packe
   }
 #ifdef DISPLAY_CLASS
   if (_ui) _ui->addChannelMsg(channel_idx, text, timestamp, pkt->path, (uint8_t)pkt->path_len);
+#ifndef PRIVATE_STATUS_REPORTER
   if (_ui) _ui->notify(UIEventType::channelMessage);
+#endif
   const char *channel_name = "Unknown";
   ChannelDetails channel_details;
   if (getChannel(channel_idx, channel_details)) {
     channel_name = channel_details.name;
   }
+#ifndef PRIVATE_STATUS_REPORTER
   if (_ui) _ui->newMsg(path_len, channel_name, text, offline_queue_len, 0);
+#endif
 
   // Live position share on a channel. The sender's identity here is only the
   // unsigned "name: msg" prefix (no pubkey), so track it by name — best-effort
@@ -1038,8 +1057,10 @@ void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packe
 
   // hop count for !hops (see onMessageRecv); not the wire path_len above.
   uint8_t ch_hops = pkt->getPathHashCount();
+#ifndef PRIVATE_STATUS_REPORTER
   if (!tryBotChannelCommand(channel_idx, text, ch_hops))  // commands take priority
     tryBotReplyChannel(channel_idx, text, ch_hops);
+#endif
 }
 
 void MyMesh::onChannelDataRecv(const mesh::GroupChannel &channel, mesh::Packet *pkt, uint16_t data_type,
@@ -1108,6 +1129,9 @@ uint8_t MyMesh::onContactRequest(const ContactInfo &contact, uint32_t sender_tim
 
     uint8_t perm_mask = ~(data[1]);    // NEW: first reserved byte (of 4), is now inverse mask to apply to permissions
     permissions &= perm_mask;
+#ifdef PRIVATE_STATUS_REPORTER
+    permissions &= ~TELEM_PERM_LOCATION;
+#endif
 
     if (permissions & TELEM_PERM_BASE) { // only respond if base permission bit is set
       telemetry.reset();
@@ -1530,6 +1554,9 @@ void MyMesh::onControlDataRecv(mesh::Packet *packet) {
     if (isDupDiscoverResp(fwd_tag, &packet->payload[6])) return;
   }
 
+#ifdef PRIVATE_STATUS_REPORTER
+  handleNearbyResponse(packet);
+#endif
   if (packet->payload_len + 4 > sizeof(out_frame)) {
     MESH_DEBUG_PRINTLN("onControlDataRecv(), payload_len too long: %d", packet->payload_len);
     return;
@@ -1923,6 +1950,12 @@ void MyMesh::begin(bool has_display) {
   if (isnan(_prefs.bw)   || isinf(_prefs.bw))   _prefs.bw   = LORA_BW;
   if (isnan(_prefs.airtime_factor) || isinf(_prefs.airtime_factor)) _prefs.airtime_factor = 0;
   if (isnan(_prefs.rx_delay_base)  || isinf(_prefs.rx_delay_base))  _prefs.rx_delay_base  = 0;
+#ifdef PRIVATE_STATUS_REPORTER
+  loadTrackerPrefs();
+  _prefs.advert_loc_policy = ADVERT_LOC_NONE;
+  _prefs.telemetry_mode_loc = TELEM_MODE_DENY;
+  sensors.position_valid = tracker_prefs.status_position_known || sensors.node_lat != 0 || sensors.node_lon != 0;
+#endif
   _prefs.rx_delay_base = constrain(_prefs.rx_delay_base, 0, 20.0f);
   _prefs.airtime_factor = constrain(_prefs.airtime_factor, 0, 9.0f);
   _prefs.freq = constrain(_prefs.freq, 150.0f, 2500.0f);
@@ -2291,6 +2324,7 @@ void MyMesh::handleCmdFrame(size_t len) {
     if (lat <= 90 * 1E6 && lat >= -90 * 1E6 && lon <= 180 * 1E6 && lon >= -180 * 1E6) {
       sensors.node_lat = ((double)lat) / 1000000.0;
       sensors.node_lon = ((double)lon) / 1000000.0;
+      sensors.position_valid = true;
       savePrefs();
       writeOKFrame();
     } else {
@@ -2314,7 +2348,7 @@ void MyMesh::handleCmdFrame(size_t len) {
     }
   } else if (cmd_frame[0] == CMD_SEND_SELF_ADVERT) {
     mesh::Packet* pkt;
-    if (_prefs.advert_loc_policy == ADVERT_LOC_NONE) {
+    if (advertLocationDisabled()) {
       pkt = createSelfAdvert(_prefs.node_name);
     } else {
       pkt = createSelfAdvert(_prefs.node_name, sensors.node_lat, sensors.node_lon);
@@ -2393,7 +2427,7 @@ void MyMesh::handleCmdFrame(size_t len) {
     if (len < 1 + PUB_KEY_SIZE) {
       // export SELF
       mesh::Packet* pkt;
-      if (_prefs.advert_loc_policy == ADVERT_LOC_NONE) {
+      if (advertLocationDisabled()) {
         pkt = createSelfAdvert(_prefs.node_name);
       } else {
         pkt = createSelfAdvert(_prefs.node_name, sensors.node_lat, sensors.node_lon);
@@ -2514,6 +2548,13 @@ void MyMesh::handleCmdFrame(size_t len) {
     memcpy(&out_frame[i], &af, 4); i += 4;
     _serial->writeFrame(out_frame, i);
   } else if (cmd_frame[0] == CMD_SET_OTHER_PARAMS) {
+#ifdef PRIVATE_STATUS_REPORTER
+    if ((len >= 3 && ((cmd_frame[2] >> 2) & 0x03) != TELEM_MODE_DENY) ||
+        (len >= 4 && cmd_frame[3] != ADVERT_LOC_NONE)) {
+      writeErrFrame(ERR_CODE_ILLEGAL_ARG);
+      return;
+    }
+#endif
     _prefs.manual_add_contacts = cmd_frame[1];
     if (len >= 3) {
       _prefs.telemetry_mode_base = cmd_frame[2] & 0x03; // v5+
@@ -3203,19 +3244,32 @@ void MyMesh::checkCLIRescueCmd() {
   int len = strlen(cli_command);
   while (Serial.available() && len < sizeof(cli_command)-1) {
     char c = Serial.read();
+#ifdef PRIVATE_STATUS_REPORTER
+    if (c == '\n') c = '\r';
+    if (c == '\r' && len == 0) continue;
+#endif
     if (c != '\n') {
       cli_command[len++] = c;
       cli_command[len] = 0;
     }
     Serial.print(c);  // echo
+#ifdef PRIVATE_STATUS_REPORTER
+    if (c == '\r') break;
+#endif
   }
   if (len == sizeof(cli_command)-1) {  // command buffer full
-    cli_command[sizeof(cli_command)-1] = '\r';
+    cli_command[sizeof(cli_command)-2] = '\r';
   }
 
   if (len > 0 && cli_command[len - 1] == '\r') {  // received complete line
     cli_command[len - 1] = 0;  // replace newline with C string null terminator
 
+#ifdef PRIVATE_STATUS_REPORTER
+    char tracker_reply[160];
+    if (handleStatusCommand(cli_command, tracker_reply)) {
+      Serial.printf("  > %s\n", tracker_reply);
+    } else
+#endif
     if (memcmp(cli_command, "set ", 4) == 0) {
       const char* config = &cli_command[4];
       if (memcmp(config, "pin ", 4) == 0) {
@@ -3406,6 +3460,14 @@ void MyMesh::checkSerialInterface() {
 
 void MyMesh::loop() {
   BaseChatMesh::loop();
+#ifdef TECHO_STATUS_LEDS
+  board.updateTrackerLeds();
+  auto location = sensors.getLocationProvider();
+  if (location && location->getFixGeneration() != last_fix_generation) {
+    last_fix_generation = location->getFixGeneration();
+    board.onGPSFix();
+  }
+#endif
 
   // APC: a tracked channel/flood send that no repeater echoed within the window is
   // treated as a lost confirmation → ramp power up (lets channel sends recover).
@@ -3432,6 +3494,9 @@ void MyMesh::loop() {
     checkSerialInterface();
   }
 
+#ifdef PRIVATE_STATUS_REPORTER
+  trackerLoop();
+#endif
   // is there are pending dirty contacts write needed?
   if (dirty_contacts_expiry && millisHasNowPassed(dirty_contacts_expiry)) {
     saveContacts();
@@ -3439,7 +3504,7 @@ void MyMesh::loop() {
   }
 
   if (_prefs.advert_auto_interval_sec > 0 && millisHasNowPassed(_next_auto_advert_ms)) {
-    mesh::Packet* pkt = (sensors.node_lat != 0 || sensors.node_lon != 0)
+    mesh::Packet* pkt = (!advertLocationDisabled() && (sensors.node_lat != 0 || sensors.node_lon != 0))
       ? createSelfAdvert(_prefs.node_name, sensors.node_lat, sensors.node_lon)
       : createSelfAdvert(_prefs.node_name);
     if (pkt) sendZeroHop(pkt);
@@ -3458,7 +3523,7 @@ void MyMesh::loop() {
 
 bool MyMesh::advert() {
   mesh::Packet* pkt;
-  if (_prefs.advert_loc_policy == ADVERT_LOC_NONE) {
+  if (advertLocationDisabled()) {
     pkt = createSelfAdvert(_prefs.node_name);
   } else {
     pkt = createSelfAdvert(_prefs.node_name, sensors.node_lat, sensors.node_lon);
@@ -3478,7 +3543,7 @@ bool MyMesh::advertFlood() {
   // scope key) -- real protocol logic, just reached from a test-only entry
   // point instead of a parsed serial command frame.
   mesh::Packet* pkt;
-  if (_prefs.advert_loc_policy == ADVERT_LOC_NONE) {
+  if (advertLocationDisabled()) {
     pkt = createSelfAdvert(_prefs.node_name);
   } else {
     pkt = createSelfAdvert(_prefs.node_name, sensors.node_lat, sensors.node_lon);
@@ -3500,3 +3565,432 @@ bool MyMesh::hasPendingWork() const {
 }
 
 #include "MyMeshBot.h"
+#ifdef PRIVATE_STATUS_REPORTER
+void MyMesh::loadTrackerPrefs() {
+  auto file = _store->openRead("/zygis1");
+  if (!file) return;
+  uint8_t data[74];
+  bool valid = file.read(data, sizeof(data)) == sizeof(data);
+  file.close();
+  if (!valid || memcmp(data, "ZYG1", 4)) return;
+  uint32_t seconds = uint32_t(data[4]) | (uint32_t(data[5]) << 8) |
+                     (uint32_t(data[6]) << 16) | (uint32_t(data[7]) << 24);
+  if (seconds > 86400 || (data[8] != 255 && data[8] >= MAX_GROUP_CHANNELS) ||
+      data[9] > 1 || data[41] != 0) return;
+  tracker_prefs.status_interval = seconds;
+  tracker_prefs.status_channel = data[8];
+  tracker_prefs.status_position_known = data[9];
+  memcpy(tracker_prefs.status_name, data + 10, 32);
+  memcpy(tracker_prefs.status_key, data + 42, 32);
+}
+
+void MyMesh::saveTrackerPrefs() {
+  tracker_prefs.status_position_known = sensors.position_valid;
+  uint8_t data[74] = {'Z', 'Y', 'G', '1'};
+  uint32_t seconds = tracker_prefs.status_interval;
+  for (unsigned i = 0; i < 4; ++i) data[4 + i] = uint8_t(seconds >> (8 * i));
+  data[8] = tracker_prefs.status_channel;
+  data[9] = tracker_prefs.status_position_known;
+  memcpy(data + 10, tracker_prefs.status_name, 32);
+  memcpy(data + 42, tracker_prefs.status_key, 32);
+  auto file = _store->openWrite("/zygis1.tmp");
+  if (!file) return;
+  bool ok = file.write(data, sizeof(data)) == sizeof(data);
+  file.close();
+  if (ok) _store->commitFile("/zygis1.tmp", "/zygis1");
+}
+
+// Never print the PSK. Also reject public/name-derived keys under renamed slots.
+const char* MyMesh::privateStatusChannel(const ChannelDetails& ch) {
+  static const uint8_t public_key[16] = {0x8b,0x33,0x87,0xe9,0xc5,0xcd,0xea,0x6a,0xc9,0xe5,0xed,0xba,0xa1,0x15,0xcd,0x72};
+  static const uint8_t zero[32] = {};
+  if (!ch.name[0]) return "empty channel";
+  if (ch.name[0] == '#') return "hashtag channel";
+  if (!memcmp(ch.channel.secret, zero, 32)) return "empty key";
+  if (!memcmp(ch.channel.secret, public_key, 16) && !memcmp(ch.channel.secret + 16, zero, 16)) return "Public key";
+  char hashtag[34];
+  snprintf(hashtag, sizeof(hashtag), "#%s", ch.name);
+  uint8_t derived[32];
+  mesh::Utils::sha256(derived, 32, (const uint8_t*)hashtag, strlen(hashtag));
+  if (!memcmp(ch.channel.secret, derived, 16)) return "hashtag-derived key";
+  mesh::Utils::sha256(derived, 32, (const uint8_t*)ch.name, strlen(ch.name));
+  if (!memcmp(ch.channel.secret, derived, 16)) return "name-derived key";
+  return nullptr;
+}
+
+const char* MyMesh::verifyTrackerChannel(ChannelDetails& ch) {
+  if (!getChannel(tracker_prefs.status_channel, ch)) return "select a private channel";
+  const char* error = privateStatusChannel(ch);
+  if (error) return error;
+  if (memcmp(ch.channel.secret, tracker_prefs.status_key, 32) ||
+      strncmp(ch.name, tracker_prefs.status_name, 32)) return "channel changed; select it again";
+  return nullptr;
+}
+
+const char* MyMesh::verifyStatus(ChannelDetails& ch) {
+  const char* error = verifyTrackerChannel(ch);
+  if (error) return error;
+  if (sensors.position_valid && (!isfinite(sensors.node_lat) || !isfinite(sensors.node_lon) ||
+      sensors.node_lat < -90 || sensors.node_lat > 90 ||
+      sensors.node_lon < -180 || sensors.node_lon > 180)) return "invalid known position";
+  return nullptr;
+}
+
+bool MyMesh::trackerReply(const char* text, bool position) {
+  // One help packet fits even with a 31-byte sender name: 99 + 33 = 132.
+  if (strlen(text) > 100 || tracker_reply_count == 24) return false;
+  auto& reply = tracker_replies[(tracker_reply_head + tracker_reply_count) % 24];
+  strcpy(reply.text, text);
+  reply.position = position;
+  ++tracker_reply_count;
+  return true;
+}
+
+void MyMesh::flushTrackerReplies() {
+  if (!tracker_reply_count || (int32_t)(millis() - next_tracker_reply) < 0) return;
+  ChannelDetails ch;
+  if (verifyStatus(ch)) return;
+  auto& reply = tracker_replies[tracker_reply_head];
+#ifdef TECHO_STATUS_LEDS
+  building_status = reply.position;
+#endif
+  bool queued = sendGroupMessage(getRTCClock()->getCurrentTimeUnique(), ch.channel, _prefs.node_name,
+                                 reply.text, strlen(reply.text));
+#ifdef TECHO_STATUS_LEDS
+  building_status = false;
+#endif
+  if (queued) {
+    tracker_reply_head = (tracker_reply_head + 1) % 24;
+    --tracker_reply_count;
+    next_tracker_reply = millis() + 1000;
+  }
+}
+
+bool MyMesh::sendStatus() {
+  ChannelDetails ch;
+  if (verifyStatus(ch)) return false;
+#ifndef BATT_MIN_MILLIVOLTS
+#define BATT_MIN_MILLIVOLTS 3000
+#endif
+#ifndef BATT_MAX_MILLIVOLTS
+#define BATT_MAX_MILLIVOLTS 4200
+#endif
+  int percent = constrain(((int)board.getBattMilliVolts() - BATT_MIN_MILLIVOLTS) * 100 /
+                          (BATT_MAX_MILLIVOLTS - BATT_MIN_MILLIVOLTS), 0, 100);
+  auto location = sensors.getLocationProvider();
+  bool fresh = acquiring_position && location && location->hasFreshFix(15000);
+  char text[101];
+  if (sensors.position_valid) {
+    snprintf(text, sizeof(text), "Bat:%d%% GPS:%s https://maps.google.com/?q=%.6f,%.6f", percent,
+             fresh ? "fix" : "no fix; last known", sensors.node_lat, sensors.node_lon);
+  } else snprintf(text, sizeof(text), "Bat:%d%% GPS:no fix; no last known position. %s", percent,
+                  acquiring_position ? "Acquiring." : "Listening.");
+  bool queued = trackerReply(text, sensors.position_valid);
+  if (queued && sensors.position_valid && (!tracker_prefs.status_position_known ||
+      (uint32_t)(millis() - last_position_save) >= 300000UL)) {
+    savePrefs();
+    last_position_save = millis();
+  }
+  return queued;
+}
+
+void MyMesh::startPositionRequest() {
+  if (acquiring_position) return;
+  acquiring_position = sensors.setGPSFromCLI(true);
+  next_status = millis() + tracker_prefs.status_interval * 1000UL;
+}
+
+void MyMesh::trackerLoop() {
+  if (_prefs.gps_enabled && tracker_prefs.status_interval > 0 && tracker_prefs.status_interval <= 86400 &&
+      (int32_t)(millis() - next_status) >= 0) {
+    next_status = millis() + tracker_prefs.status_interval * 1000UL;
+    startPositionRequest();
+    auto location = sensors.getLocationProvider();
+    if (!location || !location->hasFreshFix(15000)) sendStatus();
+  }
+  auto location = sensors.getLocationProvider();
+  if (acquiring_position && location && location->hasFreshFix(15000)) {
+    // Read this new fix directly; the sensor's periodic cache update may not have run yet.
+    sensors.node_lat = location->getLatitude() / 1000000.0;
+    sensors.node_lon = location->getLongitude() / 1000000.0;
+    sensors.position_valid = true;
+    if (sendStatus()) {
+      acquiring_position = false;
+      sensors.setGPSFromCLI(false);
+      next_status = millis() + tracker_prefs.status_interval * 1000UL;
+    }
+  }
+  nearbyLoop();
+  flushTrackerReplies();
+}
+
+void MyMesh::replyRoute(mesh::Packet* packet, const char* command) {
+  if (!packet->isRouteFlood() || !packet->getPathHashCount()) {
+    char text[101];
+    snprintf(text, sizeof(text), "ACK %s; route: direct (no repeater hashes).", command);
+    trackerReply(text);
+    return;
+  }
+  char text[101];
+  snprintf(text, sizeof(text), "ACK %s; route hashes: ", command);
+  for (unsigned i = 0; i < packet->getPathHashCount(); ++i) {
+    if (strlen(text) + packet->getPathHashSize() * 2 + 1 > 100) {
+      trackerReply(text);
+      strcpy(text, "Route continued: ");
+    }
+    char* out = text + strlen(text);
+    for (unsigned j = 0; j < packet->getPathHashSize(); ++j) {
+      sprintf(out, "%02X", packet->path[i * packet->getPathHashSize() + j]);
+      out += 2;
+    }
+    *out++ = i + 1 < packet->getPathHashCount() ? '>' : 0;
+    *out = 0;
+  }
+  trackerReply(text);
+}
+
+void MyMesh::handleTrackerMessage(const mesh::GroupChannel& channel, mesh::Packet* packet, const char* text) {
+  ChannelDetails ch;
+  if (verifyTrackerChannel(ch) || memcmp(channel.secret, ch.channel.secret, 32)) return;
+  const char* body = strstr(text, ": "); // Group text is '<sender>: <body>'.
+  if (!body) return;
+  auto request = tracker::parse(body + 2, _prefs.node_name);
+  switch (request.action) {
+    case tracker::Action::Locate:
+      replyRoute(packet, "!kur");
+      startPositionRequest();
+      if (!sensors.getLocationProvider() || !sensors.getLocationProvider()->hasFreshFix(15000)) sendStatus();
+      break;
+    case tracker::Action::PowerDown:
+      _prefs.gps_enabled = 0;
+      acquiring_position = false;
+      sensors.setGPSFromCLI(false);
+      savePrefs();
+      trackerReply("Power saving ON; GPS stopped. Listening/responding.");
+      break;
+    case tracker::Action::PowerUp:
+      _prefs.gps_enabled = 1;
+      savePrefs();
+      startPositionRequest();
+      trackerReply("Power saving OFF; GPS tracking resumed.");
+      if (!sensors.getLocationProvider() || !sensors.getLocationProvider()->hasFreshFix(15000)) sendStatus();
+      break;
+    case tracker::Action::PowerState:
+      trackerReply(_prefs.gps_enabled ? "Power saving OFF; tracking enabled (GPS sleeps between fixes)." :
+                                       "Power saving ON; tracking paused; listening/responding.");
+      break;
+    case tracker::Action::Interval: {
+      uint32_t seconds = 0;
+      bool valid = true;
+      for (const char* p = request.text; *p; ++p) {
+        if (*p < '0' || *p > '9' || seconds > 8640) { valid = false; break; }
+        seconds = seconds * 10 + (*p - '0');
+        if (seconds > 86400) { valid = false; break; }
+      }
+      char reply[80];
+      if (!valid) trackerReply("Invalid interval. Use !interval 0..86400 seconds (0=timer off).");
+      else {
+        if (*request.text) {
+          tracker_prefs.status_interval = seconds;
+          next_status = millis() + seconds * 1000UL;
+          savePrefs();
+        }
+        snprintf(reply, sizeof(reply), "Interval:%lu seconds (0=scheduled reports off).", (unsigned long)tracker_prefs.status_interval);
+        trackerReply(reply);
+      }
+      break;
+    }
+    case tracker::Action::Help: trackerReply(tracker::HELP); break;
+    case tracker::Action::Triangulate:
+      replyRoute(packet, "!triangulate");
+      startNearbyDiscovery();
+      break;
+    case tracker::Action::Alarm:
+      replyRoute(packet, "!tikra");
+      if (_ui) _ui->onTrackerAlert(*request.text ? request.text : "ALARM !tikra", true);
+      break;
+    case tracker::Action::Conversation:
+      if (_ui) _ui->onTrackerAlert(request.text, false);
+      break;
+    case tracker::Action::Unknown: {
+      char token[25] = {};
+      size_t len = strcspn(request.text, " \t");
+      if (len > sizeof(token) - 1) len = sizeof(token) - 1;
+      memcpy(token, request.text, len);
+      replyRoute(packet, token);
+      break;
+    }
+    default: break;
+  }
+}
+
+void MyMesh::startNearbyDiscovery() {
+  if (nearby_running) { trackerReply("!triangulate: discovery already running."); return; }
+  getRNG()->random((uint8_t*)&nearby_tag, sizeof(nearby_tag));
+  uint8_t data[6] = { uint8_t(CTL_TYPE_NODE_DISCOVER_REQ | 1), uint8_t(1 << ADV_TYPE_REPEATER) };
+  memcpy(data + 2, &nearby_tag, 4);
+  auto packet = createControlData(data, sizeof(data));
+  if (!packet) { trackerReply("!triangulate: radio queue full; retry."); return; }
+  nearby_count = nearby_reported = 0;
+  nearby_overflow = false;
+  nearby_running = true;
+  nearby_deadline = 0; // Window starts after actual transmission, not while queued.
+  nearby_request = packet;
+  sendZeroHop(packet);
+}
+
+void MyMesh::handleNearbyResponse(mesh::Packet* packet) {
+  if (!nearby_running || !nearby_deadline || (int32_t)(millis() - nearby_deadline) >= 0 ||
+      packet->payload_len < 14 || !packet->isRouteDirect() || packet->getPathHashCount() != 0 ||
+      packet->payload[0] != (CTL_TYPE_NODE_DISCOVER_RESP | ADV_TYPE_REPEATER) ||
+      memcmp(packet->payload + 2, &nearby_tag, 4)) return;
+  for (unsigned i = 0; i < nearby_count; ++i) {
+    if (!memcmp(nearby_repeaters[i].key, packet->payload + 6, 8)) return;
+  }
+  if (nearby_count == 64) { nearby_overflow = true; return; }
+  auto& repeater = nearby_repeaters[nearby_count++];
+  memcpy(repeater.key, packet->payload + 6, 8);
+  repeater.rssi = (int8_t)_radio->getLastRSSI();
+  repeater.snr_in = packet->_snr;
+  repeater.snr_out = packet->payload[1];
+}
+
+void MyMesh::nearbyLoop() {
+  if (!nearby_running || !nearby_deadline || (int32_t)(millis() - nearby_deadline) < 0) return;
+  while (nearby_reported < nearby_count && tracker_reply_count < 23) {
+    auto& repeater = nearby_repeaters[nearby_reported];
+    char key[17];
+    for (unsigned i = 0; i < 8; ++i) sprintf(key + 2*i, "%02X", repeater.key[i]);
+    ContactInfo* contact = lookupContactByPubKey(repeater.key, 8);
+    char text[101];
+    snprintf(text, sizeof(text), "Direct %u: %.31s [%s] RSSI:%d SNR:%.1f/%.1f", nearby_reported + 1,
+             contact ? contact->name : "unknown", key, repeater.rssi, repeater.snr_in / 4.0, repeater.snr_out / 4.0);
+    if (!trackerReply(text)) return;
+    ++nearby_reported;
+  }
+  if (nearby_reported == nearby_count && tracker_reply_count < 24) {
+    char text[101];
+    snprintf(text, sizeof(text), "!triangulate: %u direct repeater replies in 15s.%s", nearby_count,
+             nearby_overflow ? " Limit 64 reached; more replies omitted." : " Silent/hidden nodes cannot be listed.");
+    if (trackerReply(text)) nearby_running = false;
+  }
+}
+
+static bool statusNumber(const char* text, uint32_t max, uint32_t& value) {
+  if (!*text) return false;
+  value = 0;
+  for (; *text; ++text) {
+    if (*text < '0' || *text > '9') return false;
+    value = value * 10 + (*text - '0');
+    if (value > max) return false;
+  }
+  return true;
+}
+
+bool MyMesh::handleStatusCommand(const char* cmd, char* reply) {
+  if (!strcmp(cmd, "exit")) {
+    _cli_rescue = false;
+    strcpy(reply, "Companion USB protocol resumed");
+  } else if (!strcmp(cmd, "help") || !strcmp(cmd, "status help")) {
+    strcpy(reply, "gps on|off|status|diag; status channels [slot|page N]; status channel <slot>; status interval <0..86400 sec>; status show; status send; verify (0=stop)");
+  } else if (!strcmp(cmd, "gps on") || !strcmp(cmd, "gps off")) {
+    bool enabled = !strcmp(cmd, "gps on");
+    _prefs.gps_enabled = enabled;
+    if (enabled) startPositionRequest();
+    else { acquiring_position = false; sensors.setGPSFromCLI(false); }
+    savePrefs();
+    strcpy(reply, enabled ? "Tracking on; GPS cycles per fix; CLI locked" : "Tracking off; GPS off; CLI locked");
+  } else if (!strcmp(cmd, "tracker hardware")) {
+    snprintf(reply, 160, "Audio:%s GPS:%s; tracking:%s", trackerAudioAvailable() ? "available" : "missing",
+             sensors.isGPSDetected() ? "detected" : "missing", _prefs.gps_enabled ? "on" : "off");
+  } else if (!strcmp(cmd, "gps diag")) {
+    auto location = sensors.getLocationProvider();
+    if (location) location->formatDiagnostics(reply, 160);
+    else strcpy(reply, "No GPS provider");
+  } else if (!strcmp(cmd, "gps status")) {
+    sprintf(reply, "Tracking %s; GPS %s; CLI locked", _prefs.gps_enabled ? "on" : "off", acquiring_position ? "acquiring" : "asleep");
+  } else if (!strcmp(cmd, "status channels") || !strncmp(cmd, "status channels page ", 21)) {
+    uint32_t page = 0;
+    if (strcmp(cmd, "status channels") && !statusNumber(cmd + 21, (MAX_GROUP_CHANNELS - 1) / 3, page)) {
+      strcpy(reply, "Error: invalid page"); return true;
+    }
+    snprintf(reply, 160, "Page %lu (status channels page N):", (unsigned long)page);
+    for (unsigned i = page * 3; i < page * 3 + 3 && i < MAX_GROUP_CHANNELS; ++i) {
+      ChannelDetails ch;
+      if (getChannel(i, ch) && ch.name[0]) snprintf(reply + strlen(reply), 160 - strlen(reply), "\n%u: %s", i, ch.name);
+    }
+  } else if (!strncmp(cmd, "status channels ", 16) || !strncmp(cmd, "status channel ", 15)) {
+    bool inspect = !strncmp(cmd, "status channels ", 16);
+    uint32_t slot;
+    ChannelDetails ch;
+    if (!statusNumber(cmd + (inspect ? 16 : 15), MAX_GROUP_CHANNELS - 1, slot) || !getChannel(slot, ch) || !ch.name[0]) {
+      strcpy(reply, "Error: invalid or empty channel slot");
+    } else {
+      const char* error = privateStatusChannel(ch);
+      if (inspect) snprintf(reply, 160, "%lu: %s (%s)", (unsigned long)slot, ch.name, error ? error : "private candidate");
+      else if (error) snprintf(reply, 160, "Error: %s", error);
+      else {
+        tracker_reply_count = tracker_reply_head = 0; // Never redirect queued replies to a newly selected channel.
+        nearby_running = false; nearby_request = nullptr;
+        tracker_prefs.status_channel = slot;
+        memcpy(tracker_prefs.status_key, ch.channel.secret, 32);
+        memcpy(tracker_prefs.status_name, ch.name, 32);
+        savePrefs();
+        snprintf(reply, 160, "Status channel: %lu %s", (unsigned long)slot, ch.name);
+      }
+    }
+  } else if (!strncmp(cmd, "status interval ", 16)) {
+    uint32_t seconds;
+    if (!statusNumber(cmd + 16, 86400, seconds)) strcpy(reply, "Error: interval must be 0..86400 seconds");
+    else {
+      tracker_prefs.status_interval = seconds;
+      next_status = millis() + seconds * 1000UL;
+      savePrefs();
+      sprintf(reply, "Status interval: %lu seconds (0=disabled)", (unsigned long)seconds);
+    }
+  } else if (!strcmp(cmd, "status show")) {
+    snprintf(reply, 160, "Tracking:%s GPS:%s channel:%u %s interval:%lu seconds", _prefs.gps_enabled ? "on" : "off",
+             acquiring_position ? "acquiring" : "asleep", tracker_prefs.status_channel, tracker_prefs.status_name, (unsigned long)tracker_prefs.status_interval);
+  } else if (!strcmp(cmd, "verify") || !strcmp(cmd, "status verify") || !strcmp(cmd, "status send")) {
+    ChannelDetails ch;
+    const char* error = verifyStatus(ch);
+    if (error) snprintf(reply, 160, "BLOCKED: %s", error);
+    else if (!strcmp(cmd, "status send")) { startPositionRequest(); strcpy(reply, sendStatus() ? "Status queued; acquiring until fresh fix" : "Error: status not queued"); }
+    else strcpy(reply, "READY: private channel bound. GPS cycles per fix; no fix reports are labelled last known.");
+  } else return false;
+  return true;
+}
+#endif
+
+#ifdef PRIVATE_STATUS_REPORTER
+void MyMesh::logTx(mesh::Packet* packet, int len) {
+  BaseChatMesh::logTx(packet, len);
+  if (nearby_running && packet == nearby_request) {
+    nearby_request = nullptr;
+    nearby_deadline = millis() + 15000;
+  }
+#ifdef TECHO_STATUS_LEDS
+  uint8_t hash[MAX_HASH_SIZE];
+  packet->calculatePacketHash(hash);
+  for (auto& pending : status_led_packets) {
+    if (pending.packet == packet && !memcmp(pending.hash, hash, MAX_HASH_SIZE)) {
+      pending.packet = nullptr;
+      board.onStatusTransmitted();
+      break;
+    }
+  }
+#endif
+}
+void MyMesh::logTxFail(mesh::Packet* packet, int len) {
+  BaseChatMesh::logTxFail(packet, len);
+  if (packet == nearby_request) {
+    nearby_running = false; nearby_request = nullptr;
+    trackerReply("!triangulate: discovery transmission failed; retry.");
+  }
+#ifdef TECHO_STATUS_LEDS
+  for (auto& pending : status_led_packets) {
+    if (pending.packet == packet) pending.packet = nullptr;
+  }
+#endif
+}
+#endif

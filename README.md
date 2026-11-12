@@ -1,4 +1,72 @@
-# MeshCore Solo Companion Firmware
+# MeshCore Solo Žygis
+
+**Offline GPS navigation and private tracking over LoRa mesh, with waypoints,
+compass, GPX export, remote status reports, and device alerts.**
+
+Repository: [WarDaddyLT/Meshcore-Solo-Zheegis](https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis).
+Built on [MeshCore Solo](https://github.com/MarekZegare4/MeshCore-Solo) and
+[MeshCore](https://github.com/meshcore-dev/MeshCore).
+
+## Žygis tracking additions
+
+- Private-channel position and battery reports with map links, persistent channel
+  binding and intervals, and explicit fresh-fix/last-known/no-position status.
+- GPS acquires a fresh fix, reports, then sleeps until the next interval. Radio
+  and Bluetooth remain available. Acquisition has no timeout; `gps off` or
+  `!power down` stops it.
+- Target one device with `@[DeviceName] !kur`, or omit the prefix to command all
+  receiving trackers on the selected private channel. Also supports `!power`,
+  `!power up`, `!power down`, `!interval`, and compact `!help`.
+- Addressed conversation messages produce three chirps and a fullscreen alert.
+  `!tikra [text]` starts a repeating alarm. Physical controls dismiss alerts.
+- `!triangulate` discovers direct repeaters and reports key prefixes, RSSI, SNR,
+  and a reply count. Route ACKs show repeater hashes; discovery does not calculate
+  a triangulated position.
+- T-Echo Lite KeyShield speaker, Solo keypad integration, and nonblocking GPS-fix
+  (green) and completed position-TX (blue) LED bursts; M5 buzzer support.
+
+### Build the tracking firmware
+
+The new targets are opt-in; the existing Solo targets remain available.
+
+```sh
+pio run -e LilyGo_T-Echo-Lite_keyshield_zygis
+pio run -e ThinkNode_M5_zygis
+```
+
+The M5 target uses `min_spiffs.csv` (two 1.875 MiB OTA slots). Its partition layout
+changes from the stock M5 build: back up device data and use a full USB flash for
+first migration, rather than an application-only OTA update.
+
+To configure, open the USB terminal at 115200 baud and enter Solo's CLI rescue
+mode by holding the user button within the first eight seconds after startup.
+Then select a private channel created/imported through the companion app:
+
+```text
+status channels
+status channel 1
+status interval 300
+gps on
+verify
+exit
+```
+
+Replace `1` with the intended channel slot. `exit` restores the normal USB
+companion protocol. Tracking continues in rescue mode; leave rescue mode to
+resume normal companion app traffic. Public location
+adverts, remote location telemetry, and Solo's automatic live sharing are blocked
+on tracking targets. Explicit manual waypoint/location shares remain user actions.
+Navigation uses fixes available during tracking acquisition; tracker builds keep
+GPS power under the tracker CLI/channel policy. Other Solo targets retain their
+GPS duty-cycle/keep-awake behavior.
+
+See the [complete setup and command reference](docs/techo_lite_status.md),
+[migration notes](docs/zygis_migration.md), and [contributor guide](AGENTS.md).
+Host checks and firmware builds do not replace on-device GPS, audio, keypad,
+LED, persistence, and power checks. No Žygis release binaries are published by
+this migration; release links below refer to upstream Solo.
+
+## Upstream Solo features and reference
 
 A fork of the official [MeshCore](https://github.com/meshcore-dev/MeshCore) companion radio firmware with a full standalone on-device UI and extra features.
 
@@ -24,7 +92,7 @@ Solo firmware thread: https://discord.com/channels/1495203904898728149/150529433
 | LilyGO T-Echo Lite + KeyShield *(experimental)* | nRF52840 | GxEPD2 250 × 122 | `solo-<version>-LilyGo-T-Echo-Lite-keyshield.uf2` |
 | ProMicro *(experimental)* | nRF52840 | SSD1306 128 × 64 | `solo-<version>-ProMicro.uf2` |
 
-All firmware files are published on the [releases page](https://github.com/MarekZegare4/MeshCore-Solo/releases). Each binary supports both BLE and USB serial — there are no separate BLE/USB builds.
+Upstream Solo firmware files are published on the [releases page](https://github.com/MarekZegare4/MeshCore-Solo/releases). Each binary supports both BLE and USB serial — there are no separate BLE/USB builds.
 
 The MCU column decides how you flash: nRF52840 boards take a drag-and-drop `.uf2`, ESP32-S3 boards take a `.bin` written with a flasher — see [Flashing](#flashing).
 

@@ -43,6 +43,13 @@
 #include "KeyboardWidget.h"
 
 class UITask : public AbstractUITask {
+#ifdef PRIVATE_STATUS_REPORTER
+  bool tracker_alert_active = false, tracker_alarm_active = false, tracker_alert_dirty = false;
+  bool tracker_button_was_down = false, tracker_button_consumed = false;
+  char tracker_alert_text[161] = {};
+  uint32_t tracker_alert_release = 0;
+  bool consumeTrackerDismissal();
+#endif
   DisplayDriver* _display;
   SensorManager* _sensors;
 #ifdef PIN_BUZZER
@@ -596,6 +603,9 @@ public:
     return (uint32_t)_node_prefs->auto_off_secs * 1000UL;
   }
 
+#ifdef PRIVATE_STATUS_REPORTER
+  void onTrackerAlert(const char* text, bool alarm) override;
+#endif
 
   // from AbstractUITask
   void msgRead(int msgcount) override;

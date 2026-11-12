@@ -488,6 +488,10 @@ public:
   virtual void setBrightness(uint8_t level) { }  // level 0-4 (min to max), no-op default
   virtual void setDisplayRotation(uint8_t rot) { }  // 0-3, no-op for fixed-orientation displays
   virtual void setFullRefreshInterval(uint8_t n) { }  // e-ink: do full refresh every n partial refreshes (0=never)
+  virtual void showFullScreenMessage(const char* title, const char* text) {
+    startFrame(); setTextSize(1); setColor(LIGHT);
+    drawTextLeftAlign(2, 12, title); setCursor(2, 28); printWordWrap(text, width() - 4); endFrame();
+  }
   virtual void endFrame() = 0;
 
 #ifdef ENABLE_SCREENSHOT

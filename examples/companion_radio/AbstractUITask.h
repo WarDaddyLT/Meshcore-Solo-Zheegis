@@ -42,6 +42,9 @@ public:
   }
   bool hasConnection() const { return _connected; }
   virtual void onBLEDisconnected() {}
+#ifdef PRIVATE_STATUS_REPORTER
+  virtual void onTrackerAlert(const char* text, bool alarm) { (void)text; (void)alarm; }
+#endif
   // An end-to-end ACK (CRC) arrived for one of our sent messages — drives the
   // DM delivery-status marker. Default no-op for UIs that don't track it.
   virtual void onMsgAck(uint32_t ack_crc) { (void)ack_crc; }

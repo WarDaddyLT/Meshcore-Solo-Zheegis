@@ -1,5 +1,6 @@
 #include "GxEPDDisplay.h"
 #include "LemonIcons.h"
+#include "FullscreenTextLayout.h"
 
 #ifdef EXP_PIN_BACKLIGHT
   #include <PCA9557.h>
@@ -299,4 +300,45 @@ void GxEPDDisplay::endFrame() {
     display.display(partial);
     last_display_crc_value = crc;
   }
+}
+
+void GxEPDDisplay::showFullScreenMessage(const char* title, const char* text) {
+  startFrame();
+  display_crc.update<char>(title, strlen(title));
+  display_crc.update<char>(text, strlen(text));
+  display.setFont(nullptr);
+  display.setTextSize(1);
+  display.setTextColor(GxEPD_BLACK);
+  display.setTextWrap(false);
+  display.setCursor(2, 2);
+  display.print(title);
+  char readable[161];
+  size_t n = 0;
+  for (size_t i = 0; text[i] && n < sizeof(readable) - 1; ++i) {
+    unsigned char c = text[i];
+    if ((c >= 32 && c <= 126) || c == '\n') readable[n++] = c;
+    else if (c >= 128) {
+      readable[n++] = '?';
+      while (text[i+1] && (uint8_t(text[i+1]) & 0xC0) == 0x80) ++i;
+    }
+  }
+  readable[n] = 0;
+  int available_width = display.width() - 4;
+  int available_height = display.height() - 16;
+  unsigned size = fullscreen::fontSize(readable, available_width, available_height);
+  unsigned columns = available_width / (6 * size);
+  unsigned lines = fullscreen::lineCount(readable, columns);
+  int y = 14 + (available_height - int(lines * 8 * size)) / 2;
+  const char* remaining = readable;
+  char line[161];
+  display.setTextSize(size);
+  while (fullscreen::nextLine(remaining, columns, line)) {
+    int x = (display.width() - int(strlen(line) * 6 * size)) / 2;
+    display.setCursor(x, y);
+    display.print(line);
+    y += 8 * size;
+  }
+  display.setTextWrap(true);
+  setTextSize(1); // Restore Solo's font and text metrics.
+  endFrame();
 }

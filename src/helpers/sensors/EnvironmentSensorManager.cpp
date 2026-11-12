@@ -710,6 +710,9 @@ const char* EnvironmentSensorManager::getSettingValue(int i) const {
 }
 
 bool EnvironmentSensorManager::setSettingValue(const char* name, const char* value) {
+#ifdef PRIVATE_STATUS_REPORTER
+  if (strcmp(name, "gps") == 0) return false; // GPS state belongs exclusively to CLI.
+#endif
   #if ENV_INCLUDE_GPS
   if (gps_detected && strcmp(name, "gps") == 0) {
     gps_master_enabled = strcmp(value, "0") != 0;
@@ -741,7 +744,7 @@ bool EnvironmentSensorManager::setSettingValue(const char* name, const char* val
 #if ENV_INCLUDE_GPS
 void EnvironmentSensorManager::initBasicGPS() {
 
-  Serial1.setPins(PIN_GPS_TX, PIN_GPS_RX);
+  Serial1.setPins(PIN_GPS_TX, PIN_GPS_RX); // Matches LilyGo's factory GPS example order.
 
   #ifdef GPS_BAUD_RATE
   Serial1.begin(GPS_BAUD_RATE);
@@ -890,6 +893,9 @@ bool EnvironmentSensorManager::gpsIsAwake(uint8_t ioPin){
 // disabled, or a live consumer is holding _gps_keep_awake, so all three of
 // those states behave exactly like today's always-on GPS.
 void EnvironmentSensorManager::gpsDutyCycleLoop() {
+#ifdef PRIVATE_STATUS_REPORTER
+  return; // Žygis owns acquisition and sleep; no acquisition timeout.
+#endif
   if (!gps_detected || !gps_master_enabled) return;
 
   if (gps_duty_sleep_sec == 0 || _gps_keep_awake) {
@@ -977,6 +983,7 @@ void EnvironmentSensorManager::loop() {
     if ((i2cGPSFlag || serialGPSFlag) && _location->isValid()) {
       node_lat = ((double)_location->getLatitude())/1000000.;
       node_lon = ((double)_location->getLongitude())/1000000.;
+      position_valid = true;
       MESH_DEBUG_PRINTLN("lat %f lon %f", node_lat, node_lon);
       node_altitude = ((double)_location->getAltitude()) / 1000.0;
       MESH_DEBUG_PRINTLN("lat %f lon %f alt %f", node_lat, node_lon, node_altitude);
@@ -985,6 +992,7 @@ void EnvironmentSensorManager::loop() {
     if (_location->isValid()) {
       node_lat = ((double)_location->getLatitude())/1000000.;
       node_lon = ((double)_location->getLongitude())/1000000.;
+      position_valid = true;
       MESH_DEBUG_PRINTLN("lat %f lon %f", node_lat, node_lon);
       node_altitude = ((double)_location->getAltitude()) / 1000.0;
       MESH_DEBUG_PRINTLN("lat %f lon %f alt %f", node_lat, node_lon, node_altitude);

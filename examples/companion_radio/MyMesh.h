@@ -196,6 +196,17 @@ protected:
   void sendFloodScoped(const ContactInfo& recipient, mesh::Packet* pkt, uint32_t delay_millis=0) override;
   void sendFloodScoped(const mesh::GroupChannel& channel, mesh::Packet* pkt, uint32_t delay_millis=0) override;
 
+#ifdef TECHO_STATUS_LEDS
+  struct StatusLedPacket { mesh::Packet* packet = nullptr; uint8_t hash[MAX_HASH_SIZE]; };
+  StatusLedPacket status_led_packets[16]; // Same capacity as the packet pool.
+  uint8_t next_status_led_packet = 0;
+  bool building_status = false;
+  uint32_t last_fix_generation = 0;
+#endif
+#ifdef PRIVATE_STATUS_REPORTER
+  void logTx(mesh::Packet* packet, int len) override;
+  void logTxFail(mesh::Packet* packet, int len) override;
+#endif
   void logRxRaw(float snr, float rssi, const uint8_t raw[], int len) override;
   bool isAutoAddEnabled() const override;
   bool shouldAutoAddContactType(uint8_t type) const override;
@@ -337,7 +348,19 @@ public:
     return true;
   }
 
-  void savePrefs() { _store->savePrefs(_prefs, sensors.node_lat, sensors.node_lon); }
+  bool advertLocationDisabled() const {
+#ifdef PRIVATE_STATUS_REPORTER
+    return true;
+#else
+    return _prefs.advert_loc_policy == ADVERT_LOC_NONE;
+#endif
+  }
+  void savePrefs() {
+    _store->savePrefs(_prefs, sensors.node_lat, sensors.node_lon);
+#ifdef PRIVATE_STATUS_REPORTER
+    saveTrackerPrefs();
+#endif
+  }
   void saveRTCTime() { _store->saveRTCTime(); }
   // Contact updates (new adverts, path/lastmod changes) are lazily debounced
   // (see dirty_contacts_expiry) to avoid wearing flash on every packet --
@@ -423,6 +446,9 @@ public:
 
 #if ENV_INCLUDE_GPS == 1
   void applyGpsPrefs() {
+#ifdef PRIVATE_STATUS_REPORTER
+    sensors.setGPSFromCLI(false); // Tracking wakes GPS only during acquisition.
+#else
     sensors.setSettingValue("gps", _prefs.gps_enabled ? "1" : "0");
     // gps_interval doubles as the GPS duty-cycle sleep window in seconds
     // (0 = disabled, GPS stays continuous) -- see EnvironmentSensorManager::
@@ -430,6 +456,7 @@ public:
     char interval_str[12];
     sprintf(interval_str, "%u", _prefs.gps_interval);
     sensors.setSettingValue("gps_interval", interval_str);
+#endif
   }
 #endif
 
@@ -478,6 +505,44 @@ private:
   // defaults to "someone" if there's no ": " separator.
   void botChannelSenderSplit(const char* text, char* sender_name, int sender_name_len, const char** msg_out);
 
+#ifdef PRIVATE_STATUS_REPORTER
+  struct TrackerPrefs {
+    uint32_t status_interval = 0;
+    uint8_t status_channel = 255;
+    uint8_t status_position_known = 0;
+    char status_name[32] = {};
+    uint8_t status_key[32] = {};
+  } tracker_prefs;
+  void loadTrackerPrefs();
+  void saveTrackerPrefs();
+  uint32_t next_status = 0;
+  uint32_t last_position_save = 0;
+  bool handleStatusCommand(const char* command, char* reply);
+  const char* verifyStatus(ChannelDetails& channel);
+  const char* privateStatusChannel(const ChannelDetails& channel);
+  bool sendStatus();
+  bool acquiring_position = false;
+  struct TrackerReply { char text[101]; bool position; };
+  TrackerReply tracker_replies[24];
+  uint8_t tracker_reply_head = 0, tracker_reply_count = 0;
+  uint32_t next_tracker_reply = 0;
+  bool trackerReply(const char* text, bool position = false);
+  void flushTrackerReplies();
+  void startPositionRequest();
+  void trackerLoop();
+  void handleTrackerMessage(const mesh::GroupChannel& channel, mesh::Packet* packet, const char* text);
+  const char* verifyTrackerChannel(ChannelDetails& channel);
+  void replyRoute(mesh::Packet* packet, const char* command);
+  struct NearbyRepeater { uint8_t key[8]; int8_t rssi, snr_in, snr_out; };
+  NearbyRepeater nearby_repeaters[64];
+  uint8_t nearby_count = 0, nearby_reported = 0;
+  bool nearby_running = false, nearby_overflow = false;
+  uint32_t nearby_tag = 0, nearby_deadline = 0;
+  mesh::Packet* nearby_request = nullptr;
+  void startNearbyDiscovery();
+  void handleNearbyResponse(mesh::Packet* packet);
+  void nearbyLoop();
+#endif
   void writeOKFrame();
   void writeErrFrame(uint8_t err_code);
   void writeDisabledFrame();

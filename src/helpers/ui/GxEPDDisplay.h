@@ -143,5 +143,6 @@ public:
   }
   void setDisplayRotation(uint8_t rot) override;
   void setFullRefreshInterval(uint8_t n) override { _full_refresh_interval = n; _partial_count = 0; }
+  void showFullScreenMessage(const char* title, const char* text) override;
   void endFrame() override;
 };

@@ -1,3 +1,4 @@
+#include "../TrackerAudio.h"
 #include "UITask.h"
 #include "SoundNotifier.h"
 #include <helpers/TxtDataHelpers.h>
@@ -2259,6 +2260,34 @@ bool UITask::isButtonPressed() const {
 #endif
 }
 
+#ifdef PRIVATE_STATUS_REPORTER
+bool UITask::consumeTrackerDismissal() {
+  if (tracker_alert_active) {
+    tracker_alert_active = tracker_alarm_active = false;
+    trackerAudioStop();
+    tracker_button_consumed = true;
+    tracker_alert_release = millis() + 500;
+    _kq_head = _kq_tail = 0;
+    _next_refresh = 0;
+    return true;
+  }
+  if (tracker_button_consumed) {
+    if ((int32_t)(millis() - tracker_alert_release) < 0) return true;
+    tracker_button_consumed = false;
+  }
+  return false;
+}
+
+void UITask::onTrackerAlert(const char* text, bool alarm) {
+  if (tracker_alarm_active && !alarm) return; // Conversation must not silence an active alarm.
+  StrHelper::strncpy(tracker_alert_text, text, sizeof(tracker_alert_text));
+  tracker_alert_active = tracker_alert_dirty = true;
+  tracker_alarm_active = alarm;
+  trackerAudioStart(alarm);
+  if (_display) _display->turnOn();
+}
+#endif
+
 static void formatDashVal(uint8_t field, char* val, int val_len, uint16_t batt_mv,
                           uint16_t low_batt_mv, int unread, bool imperial, CayenneLPP* lpp) {
   val[0] = '\0';
@@ -2464,6 +2493,7 @@ static const char CARDKB_FN_BASE[48] = {
 // CardKB is level-triggered (it keeps returning the held key's byte, not just
 // once), so _cardkb_last_raw debounces it into one press per physical
 // keypress, same as a MomentaryButton's CLICK event.
+#if defined(CARDKB_I2C)
 void UITask::toggleCardKBLock() {
   if (_display && !_display->isOn()) _display->turnOn();
   _locked = !_locked;
@@ -2486,6 +2516,8 @@ void UITask::toggleCardKBScript() {
     showAlert("Set Additional language", 1200);
   }
 }
+
+#endif
 
 void UITask::pollCardKB() {
 #if defined(CARDKB_I2C)
@@ -2626,6 +2658,19 @@ void UITask::pollHallSensor() {
 }
 
 void UITask::loop() {
+#ifdef PRIVATE_STATUS_REPORTER
+  trackerAudioLoop();
+  bool button_down = false;
+#ifdef PIN_USER_BTN
+  button_down = digitalRead(PIN_USER_BTN) == LOW;
+#endif
+#ifdef PIN_BUTTON2
+  button_down = button_down || digitalRead(PIN_BUTTON2) == LOW;
+#endif
+  if (tracker_alert_active && button_down && !tracker_button_was_down) consumeTrackerDismissal();
+  tracker_button_was_down = button_down;
+  if (tracker_button_consumed && button_down) tracker_alert_release = millis() + 500;
+#endif
   // Background delivery: resend pending on-device DMs whose ACK timed out, and
   // finalise the ✗ marker — runs regardless of which screen is active.
   ((MessagesScreen*)messages_screen)->tickDmResends();
@@ -2836,6 +2881,11 @@ void UITask::loop() {
   }
 #endif
 
+#ifdef PRIVATE_STATUS_REPORTER
+  if (tracker_alert_active && _kq_head != _kq_tail) {
+    consumeTrackerDismissal();
+  }
+#endif
   // A ringing alarm/timer is dismissed by ANY key, even when locked or on another
   // screen — and the queued keys are swallowed so they don't also act on the view.
   if (_kq_head != _kq_tail && isRinging()) {
@@ -2885,6 +2935,14 @@ void UITask::loop() {
   tickClockTools();
 
   if (_display != NULL && _display->isOn()) {
+#ifdef PRIVATE_STATUS_REPORTER
+    if (tracker_alert_active) {
+      if (tracker_alert_dirty) {
+        _display->showFullScreenMessage(tracker_alarm_active ? "ALARM - any key" : "MESSAGE - any key", tracker_alert_text);
+        tracker_alert_dirty = false;
+      }
+    } else
+#endif
     if (_locked && (int32_t)(millis() - _lock_wake_until) >= 0) {
       _display->turnOff();
     } else if (_locked && millis() >= _next_refresh && home) {
@@ -2928,7 +2986,11 @@ void UITask::loop() {
       _auto_off = millis() + AUTO_OFF_MILLIS;
     }
 #endif
-    if (!_locked && autoOffMillis() > 0 && (int32_t)(millis() - _auto_off) >= 0 && !isRinging()) {
+    if (!_locked && autoOffMillis() > 0 && (int32_t)(millis() - _auto_off) >= 0 && !isRinging()
+#ifdef PRIVATE_STATUS_REPORTER
+        && !tracker_alert_active
+#endif
+    ) {
       _display->turnOff();
 #ifdef PIN_LED
       digitalWrite(PIN_LED, LOW);  // turn off status LED with display to save power
@@ -3437,6 +3499,9 @@ void UITask::onSharedLocation(const uint8_t* pub_key, const char* name,
 }
 
 bool UITask::sendLocationShare(int32_t lat, int32_t lon) {
+#ifdef PRIVATE_STATUS_REPORTER
+  return false; // Automatic location reports use the bound Žygis private channel.
+#endif
   if (!_node_prefs) return false;
   char text[80];
   if (_node_prefs->loc_share_target_type == 0) {
@@ -3501,6 +3566,9 @@ bool UITask::addWaypoint(int32_t lat, int32_t lon, const char* label) {
 }
 
 char UITask::checkDisplayOn(char c) {
+#ifdef PRIVATE_STATUS_REPORTER
+  if (consumeTrackerDismissal()) return 0;
+#endif
   if (_display != NULL) {
     if (!_display->isOn()) {
       _display->turnOn();
@@ -3526,6 +3594,9 @@ char UITask::checkDisplayOn(char c) {
 }
 
 char UITask::handleLongPress(char c) {
+#ifdef PRIVATE_STATUS_REPORTER
+  if (consumeTrackerDismissal()) return 0;
+#endif
   // Same checkDisplayOn() gate every other input path goes through (see
   // pollCardKB()'s Fn+letter handling for the same shape) -- without it, a long
   // press while the display is off neither wakes it nor extends auto-off, and
@@ -3542,12 +3613,18 @@ char UITask::handleLongPress(char c) {
 }
 
 char UITask::handleDoubleClick(char c) {
+#ifdef PRIVATE_STATUS_REPORTER
+  if (consumeTrackerDismissal()) return 0;
+#endif
   MESH_DEBUG_PRINTLN("UITask: double-click triggered");
   checkDisplayOn(c);
   return c;
 }
 
 char UITask::handleTripleClick(char c) {
+#ifdef PRIVATE_STATUS_REPORTER
+  if (consumeTrackerDismissal()) return 0;
+#endif
   checkDisplayOn(c);
   toggleBuzzer();
   return 0;
@@ -3583,6 +3660,10 @@ void UITask::toggleGPS() {
 // Home-page manual toggle and the bot's !gps on/off command, which needs to
 // set a specific state rather than flip whatever it currently is.
 void UITask::applyGpsState(bool on) {
+#ifdef PRIVATE_STATUS_REPORTER
+  showAlert("GPS: tracker CLI", 800);
+  return;
+#endif
   if (_sensors == NULL) return;
   int num = _sensors->getNumSettings();
   for (int i = 0; i < num; i++) {
