@@ -14,6 +14,11 @@
 - Regression checks for privacy, dispatch, GPS cycling, layout, LEDs and persistence.
 - English and Lithuanian project introductions, community templates and CI.
 
+### Fixed
+
+- Native Linux simulator builds now include the fixed-width integer types used
+  by the vendored polyline codec explicitly.
+
 ### Project foundation
 
 - Tracking port: `17bfaf9d`.

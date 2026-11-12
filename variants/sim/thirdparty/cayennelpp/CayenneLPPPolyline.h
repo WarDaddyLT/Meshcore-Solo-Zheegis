@@ -12,10 +12,7 @@
 
 #include <utility>
 #include <vector>
-// ESP-IDF framework
-#if !defined(ARDUINO) && defined(IDF_VER)
-#include <stdint.h>
-#endif
+#include <stdint.h> // Fixed-width types are also required by native Linux builds.
 
 struct DeltaCoord;
 
