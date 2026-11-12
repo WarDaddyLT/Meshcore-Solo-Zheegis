@@ -1,0 +1,20 @@
+name: Feature idea / Pasiūlymas
+description: Suggest a concrete improvement. Lithuanian and English welcome.
+title: "[Idea] "
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What would this help you do? / Kokį poreikį spręstų?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior / Siūlomas veikimas
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Relevant device or setup / Įrenginys

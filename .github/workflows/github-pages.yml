@@ -1,10 +1,7 @@
-name: Build and deploy Docs site to GitHub Pages
+name: "Upstream reference: docs deployment"
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: write
@@ -14,6 +11,7 @@ env:
 
 jobs:
   github-pages:
+    if: github.repository == 'meshcore-dev/MeshCore'
     runs-on: ubuntu-latest
     steps:
 

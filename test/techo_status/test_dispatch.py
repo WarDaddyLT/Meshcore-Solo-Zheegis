@@ -24,7 +24,7 @@ struct Listener {
  void onTrackerAlert(const char* text, bool alarm) { message=text; if (alarm) ++alarms; else ++chirps; }
 };
 struct MyMesh {
- struct { char node_name[32] = "Daubis"; bool gps_enabled = true; uint32_t status_interval = 300; } _prefs;
+ struct { char node_name[32] = "Tracker01"; bool gps_enabled = true; uint32_t status_interval = 300; } _prefs;
  decltype(_prefs)& tracker_prefs = _prefs;
  Listener listener; Listener* _ui = &listener;
  bool allowed = true, acquiring_position = false;
@@ -48,24 +48,24 @@ int main() {
  assert(m.requests==0 && m.replies.empty() && m.acks.empty());
  recv("Parent: @[Other] hello"); assert(m.listener.chirps==0);
  recv("Parent: hello"); assert(m.listener.chirps==0);
- recv("Parent: @[Daubis] hello");
+ recv("Parent: @[Tracker01] hello");
  assert(m.listener.chirps==1 && m.listener.message=="hello");
- recv("Parent: @[Daubis] !kur");
+ recv("Parent: @[Tracker01] !kur");
  assert(m.requests==1 && m.status==1 && m.acks.back()=="!kur" && m.listener.chirps==1);
- recv("Parent: @[Daubis] !tikra Come home");
+ recv("Parent: @[Tracker01] !tikra Come home");
  assert(m.listener.alarms==1 && m.listener.message=="Come home" && m.acks.back()=="!tikra" && m.listener.chirps==1);
- recv("Parent: @[Daubis] !unknown");
+ recv("Parent: @[Tracker01] !unknown");
  assert(m.acks.back()=="!unknown" && m.listener.chirps==1);
- recv("Parent: @[Daubis] !power down");
+ recv("Parent: @[Tracker01] !power down");
  assert(!m._prefs.gps_enabled && !m.acquiring_position && !sensors.gps);
  recv("Parent: @[Other] !power up"); assert(!m._prefs.gps_enabled);
- recv("Parent: @[Daubis] !power up"); assert(m._prefs.gps_enabled && m.acquiring_position);
+ recv("Parent: @[Tracker01] !power up"); assert(m._prefs.gps_enabled && m.acquiring_position);
  recv("Parent: !interval 120"); assert(m.tracker_prefs.status_interval==120);
  recv("Parent: !interval -1"); assert(m.tracker_prefs.status_interval==120);
  recv("Parent: !interval 4294967296"); assert(m.tracker_prefs.status_interval==120);
  recv("Parent: !interval"); assert(m.replies.back().find("120 seconds")!=std::string::npos);
  size_t count=m.replies.size();
- recv("Parent: @[Daubis] !help");
+ recv("Parent: @[Tracker01] !help");
  assert(m.replies.size()==count+1 && m.replies.back()==tracker::HELP && m.replies.back().size()+33<=133);
  recv("Parent: !triangulate"); assert(m.scans==1 && m.acks.back()=="!triangulate");
  m.allowed=false;

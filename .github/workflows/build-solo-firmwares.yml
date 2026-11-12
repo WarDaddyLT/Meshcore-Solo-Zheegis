@@ -1,13 +1,10 @@
-name: Build Solo Firmwares
+name: "Manual reference: Build Solo Firmwares"
 
 permissions:
   contents: write
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

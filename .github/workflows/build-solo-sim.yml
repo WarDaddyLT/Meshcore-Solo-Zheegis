@@ -1,4 +1,4 @@
-name: Build Solo Sim (WASM)
+name: "Manual reference: Build Solo Sim (WASM)"
 
 # Builds the companion_radio browser sim (real firmware compiled to WASM via
 # Emscripten, see variants/sim/) and attaches it to the same draft release
@@ -17,9 +17,6 @@ permissions:
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
 
 jobs:
   build-sim-wasm:

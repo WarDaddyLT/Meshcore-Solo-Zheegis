@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and feedback / Klausimai ir atsiliepimai
+    url: https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis/discussions
+    about: Ask for help or share experiences in Lithuanian or English.
+  - name: Private security report
+    url: https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis/security/advisories/new
+    about: Report a security issue privately.

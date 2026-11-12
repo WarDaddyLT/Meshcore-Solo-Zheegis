@@ -16,6 +16,7 @@ Install PlatformIO and run from the repository root:
 - `pio run -e LilyGo_T-Echo-Lite_keyshield_zygis`: build T-Echo Lite tracking with Solo UI.
 - `pio run -e ThinkNode_M5_zygis`: build M5 tracking with its larger OTA partitions.
 - Add `-t upload --upload-port <port>` to flash; review partition migration instructions first.
+- `python3 scripts/check_project_docs.py`: validate public documentation links and neutral examples.
 - `pio device monitor -b 115200`: configuration console; enter rescue mode, then use `exit` to restore USB framing.
 - `pio test -e native -e native_kiss_modem -vv`: upstream host suites.
 - `python3 test/techo_status/test_status.py`: privacy, parsing, layout and LED checks; also run `test_cycle.py`, `test_dispatch.py`, and `test_persistence.py`.
@@ -27,3 +28,6 @@ Gate tracking behavior with `PRIVATE_STATUS_REPORTER`; preserve ordinary Solo ta
 
 ## Commits & Pull Requests
 Use concise, component-specific commit subjects. Target this fork's `main`, keep each PR focused, link related issues, describe affected boards and validation, and update feature documentation. Upstream contribution rules apply when submitting upstream.
+
+## Community Documentation
+Keep English and Lithuanian introductions aligned on support and preview status. Use neutral device names such as `Tracker01`; never use personal family names in examples. Keep release/deployment workflows manual unless explicitly publishing a reviewed release.

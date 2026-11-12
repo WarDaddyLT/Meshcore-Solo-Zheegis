@@ -10,10 +10,9 @@ their original behavior.
 Create/import a private channel with a random secret in MeshCore, pair over
 Bluetooth, and open the USB terminal at 115200 baud (CR or LF). Hold the physical
 user button within eight seconds of startup to enter Solo CLI rescue mode.
-Use `exit` after configuration to restore the binary USB companion protocol;
-Tracking continues in rescue mode; use `exit` to resume normal companion app
-traffic. Default BLE PIN
-is 123456 unless previously changed. Configure the same radio preset as your mesh.
+Tracking continues in rescue mode. Use `exit` after configuration to restore
+normal companion app traffic. The default BLE PIN is 123456 unless previously
+changed. Configure the same radio preset as your mesh.
 
 ```text
 help
@@ -86,10 +85,10 @@ Only messages decrypted in the selected, unchanged private channel control the
 tracker. The handle is the device's configured MeshCore name, matched exactly.
 
 ```text
-@[Daubis] !kur
-@[Daubis] !interval 300
-@[Daubis] !tikra Come home
-@[Daubis] Hello, please call me
+@[Tracker01] !kur
+@[Tracker01] !interval 300
+@[Tracker01] !tikra Come home
+@[Tracker01] Hello, please call me
 ```
 
 A prefix targets one device; other devices neither act nor reply. Without a

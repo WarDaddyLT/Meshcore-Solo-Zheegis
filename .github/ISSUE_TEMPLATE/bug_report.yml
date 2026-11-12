@@ -1,0 +1,29 @@
+name: Bug report / Klaida
+description: Report reproducible behavior in a Žygis build. Lithuanian and English welcome.
+title: "[Bug] "
+body:
+  - type: input
+    id: build
+    attributes:
+      label: Commit or version / Versija
+      placeholder: Commit SHA and PlatformIO environment
+    validations:
+      required: true
+  - type: input
+    id: board
+    attributes:
+      label: Board and accessories / Įrenginys
+      placeholder: T-Echo Lite + KeyShield, ThinkNode M5, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps, expected result and actual result / Veiksmai ir rezultatas
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, screenshots and checks / Papildoma informacija
+      description: Remove channel secrets and personal location data. State whether observed on hardware or in host checks.

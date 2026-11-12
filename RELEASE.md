@@ -1,15 +1,23 @@
-# Releasing Firmware
+# Preparing a Žygis release
 
-GitHub Actions is set up to automatically build and release firmware.
+The current project is a source/community preview. Do not present successful
+host tests or firmware builds as physical-device validation.
 
-It will automatically build firmware when one of the following tag formats are pushed.
+1. Confirm the changelog, roadmap, setup guide and tested-device matrix reflect
+   the candidate commit. Include known limitations and migration instructions.
+2. Run the `Žygis checks` workflow on the release commit. Both firmware targets
+   and host checks must pass.
+3. Record on-device results for each included target. Verify the M5 partition
+   migration, GPS acquisition/sleep, persistence, controls, audio and LEDs.
+4. Review the licenses of all distributed dependencies. The pinned T-Echo Lite
+   ES8311 dependency declares AGPL-3.0; the upstream MIT license does not cover
+   every binary component. Resolve distribution requirements before attaching
+   builds and preserve required notices/source availability.
+5. Use a Žygis-specific tag, e.g. `zygis-v0.1.0-preview.1`, after choosing an
+   actual version. Create a draft release with the exact build SHA, environments,
+   flashing instructions, checksums and known limitations.
+6. Publish only the reviewed artifacts and notes. Use clear device-specific
+   filenames; distinguish full ESP32 images from application-only OTA images.
 
-- `companion-v1.0.0`
-- `repeater-v1.0.0`
-- `room-server-v1.0.0`
-
-> NOTE: replace `v1.0.0` with the version you want to release as.
-
-- You can push one, or more tags on the same commit, and they will all build separately.
-- Once the firmware has been built, a new (draft) GitHub Release will be created.
-- You will need to update the release notes, and publish it.
+Inherited Solo/MeshCore release workflows are manual in this fork. The standard
+CI does not create tags, publish releases, upload firmware, or deploy Pages.
