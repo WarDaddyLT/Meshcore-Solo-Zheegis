@@ -23,8 +23,8 @@ import os
 # Mesh protocol constants
 FRAME_START_OUT = 0x3C  # '<' - used when sending TO device
 FRAME_START_IN = 0x3E  # '>' - used when receiving FROM device
-CMD_GET_SCREENSHOT = 66
-RESP_CODE_SCREENSHOT = 29
+CMD_GET_SCREENSHOT = 0x7E
+RESP_CODE_SCREENSHOT = 0x7E
 RESP_CODE_ERR = 1
 
 # display_type values (byte [5] in response frame)

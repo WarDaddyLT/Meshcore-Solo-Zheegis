@@ -75,8 +75,9 @@
 #define CMD_SET_DEFAULT_FLOOD_SCOPE   63
 #define CMD_GET_DEFAULT_FLOOD_SCOPE   64
 #define CMD_SEND_RAW_PACKET           65
+#define CMD_RUN_CLI_COMMAND           66 // Upstream v14 local CLI
 #ifdef ENABLE_SCREENSHOT
-#define CMD_GET_SCREENSHOT             66   // Request screenshot from display
+#define CMD_GET_SCREENSHOT             0x7E   // Request screenshot from display
 #endif
 
 // Stats sub-types for CMD_GET_STATS
@@ -113,8 +114,9 @@
 #define RESP_ALLOWED_REPEAT_FREQ      26
 #define RESP_CODE_CHANNEL_DATA_RECV   27
 #define RESP_CODE_DEFAULT_FLOOD_SCOPE 28
+#define RESP_CODE_CLI_REPLY           29
 #ifdef ENABLE_SCREENSHOT
-#define RESP_CODE_SCREENSHOT           29   // Response with screenshot data
+#define RESP_CODE_SCREENSHOT           0x7E   // Response with screenshot data
 #endif
 
 #define MAX_CHANNEL_DATA_LENGTH       (MAX_FRAME_SIZE - 9)
@@ -2147,6 +2149,11 @@ void MyMesh::handleCmdFrame(size_t len) {
     memcpy(&out_frame[i], _prefs.node_name, tlen);
     i += tlen;
     _serial->writeFrame(out_frame, i);
+#ifdef PRIVATE_STATUS_REPORTER
+  } else if (cmd_frame[0] == CMD_RUN_CLI_COMMAND) {
+    if (len < 3 || len > MAX_FRAME_SIZE) writeErrFrame(ERR_CODE_ILLEGAL_ARG);
+    else handleAppCLI(len);
+#endif
   } else if (cmd_frame[0] == CMD_SEND_TXT_MSG && len >= 14) {
     int i = 1;
     uint8_t txt_type = cmd_frame[i++];
@@ -3433,6 +3440,14 @@ void MyMesh::checkCLIRescueCmd() {
 
 void MyMesh::checkSerialInterface() {
   size_t len = _serial->checkRecvFrame(cmd_frame);
+#ifdef PRIVATE_STATUS_REPORTER
+  char command[80];
+  if (_serial->checkRecvText(command, sizeof(command))) {
+    char reply[160];
+    if (!handleStatusCommand(command, reply)) strcpy(reply, "Error: unknown tracker command; use status help");
+    _serial->writeText(reply);
+  }
+#endif
   if (len > 0) {
     handleCmdFrame(len);
   } else if (_iter_started              // check if our ContactsIterator is 'running'
@@ -3874,6 +3889,30 @@ void MyMesh::nearbyLoop() {
              nearby_overflow ? " Limit 64 reached; more replies omitted." : " Silent/hidden nodes cannot be listed.");
     if (trackerReply(text)) nearby_running = false;
   }
+}
+
+void MyMesh::handleAppCLI(size_t len) {
+  char text[MAX_FRAME_SIZE];
+  memcpy(text, cmd_frame + 1, len - 1);
+  text[len - 1] = 0;
+  char* command = text;
+  while (*command == ' ') ++command;
+  char prefix[3];
+  size_t prefix_len = 0;
+  if (strlen(command) > 3 && command[2] == '|') {
+    memcpy(prefix, command, 3);
+    prefix_len = 3;
+    command += 3;
+  }
+  while (*command == ' ') ++command;
+  char reply[160];
+  if (!handleStatusCommand(command, reply)) strcpy(reply, "Unknown tracker command; use status help");
+  out_frame[0] = RESP_CODE_CLI_REPLY;
+  memcpy(out_frame + 1, prefix, prefix_len);
+  size_t reply_len = strlen(reply);
+  if (reply_len > MAX_FRAME_SIZE - 1 - prefix_len) reply_len = MAX_FRAME_SIZE - 1 - prefix_len;
+  memcpy(out_frame + 1 + prefix_len, reply, reply_len);
+  _serial->writeFrame(out_frame, 1 + prefix_len + reply_len);
 }
 
 static bool statusNumber(const char* text, uint32_t max, uint32_t& value) {

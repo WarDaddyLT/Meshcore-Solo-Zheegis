@@ -34,6 +34,10 @@ jobs:
           python test/tracking/test_cycle.py
           python test/tracking/test_dispatch.py
           python test/tracking/test_persistence.py
+          python test/tracking/test_serial_cli.py
+          python test/tracking/test_app_cli.py
+          python test/tracking/test_calendar.py
+          python test/tracking/test_tracking_menu.py
       - name: Native suites
         run: pio test -e native -e native_kiss_modem -vv
       - name: Ordinary Solo compatibility build

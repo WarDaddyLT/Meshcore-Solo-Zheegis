@@ -23,6 +23,12 @@
 
 ### Fixed
 
+- Routed tracking commands from normal USB terminals and the companion app's
+  protocol-v14 local CLI; moved screenshot requests/replies to `0x7E`.
+- Restored the portrait home calendar and added Settings → Tracking with shared
+  validation/persistence for channel, interval and tracking controls.
+
+
 - Native Linux simulator builds now include the fixed-width integer types used
   by the vendored polyline codec explicitly.
 

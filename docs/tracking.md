@@ -14,10 +14,9 @@ hardware it runs on.
    group's radio preset.
 3. Create or import a private channel with a newly generated secret in a
    compatible companion app.
-4. Use your build's configuration interface to select that channel, set a
-   reporting interval, and enable tracking. The current
-   [developer CLI reference](tracking-cli.md) describes the implemented terminal
-   interface; it is not a universal device setup sequence.
+4. Open **Settings → Tracking**, or use the companion app's local CLI, to select
+   that channel, set a reporting interval, and enable tracking. See the
+   [CLI reference](tracking-cli.md) for commands and transport details.
 5. Send `@[Tracker01] !kur` in the selected channel, substituting the device's
    exact configured name, to request a report.
 
@@ -144,8 +143,8 @@ versioned `/zygis1` record using atomic replacement. Coordinates and tracking
 enablement remain in Solo preferences; the `NodePrefs` binary schema is unchanged.
 
 The tracking scheduler controls GPS acquisition and sleep without an acquisition
-timeout. Solo's GPS toggles and duty scheduler cannot override it in tracking
-builds. Navigation and trail recording use fixes available during acquisition.
+timeout. Solo's legacy GPS toggles and duty scheduler cannot override it in tracking
+builds; use Settings → Tracking or the tracking CLI. Navigation and trail recording use fixes available during acquisition.
 Generic channel notifications and channel-bot dispatch are replaced by tracker
 routing, while channel message history remains available.
 

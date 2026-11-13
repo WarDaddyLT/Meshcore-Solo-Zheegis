@@ -28,4 +28,9 @@ public:
   virtual bool isWriteBusy() const = 0;
   virtual size_t writeFrame(const uint8_t src[], size_t len) = 0;
   virtual size_t checkRecvFrame(uint8_t dest[]) = 0;
+#ifdef PRIVATE_STATUS_REPORTER
+  // Text is collected only outside companion frames, on a physical serial transport.
+  virtual bool checkRecvText(char* dest, size_t capacity) { return false; }
+  virtual void writeText(const char* text) {}
+#endif
 };

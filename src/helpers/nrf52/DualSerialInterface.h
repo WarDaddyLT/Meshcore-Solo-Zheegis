@@ -46,7 +46,15 @@ public:
     return (_ble_enabled && _ble.isConnected()) ? _ble.writeFrame(src, len) : _usb.writeFrame(src, len);
   }
 
+#ifdef PRIVATE_STATUS_REPORTER
+  bool checkRecvText(char* dest, size_t capacity) override { return _usb.checkRecvText(dest, capacity); }
+  void writeText(const char* text) override { _usb.writeText(text); }
+#endif
+
   size_t checkRecvFrame(uint8_t dest[]) override {
+#ifdef PRIVATE_STATUS_REPORTER
+    size_t usb_len = _usb.checkRecvFrame(_usb_buf);
+#endif
     if (_ble_enabled) {
       size_t ble_len = _ble.checkRecvFrame(_ble_buf);
       bool ble_now = _ble.isConnected();
@@ -54,7 +62,7 @@ public:
       if (ble_now) {
         _ble_was_connected = true;
         if (ble_len > 0) { memcpy(dest, _ble_buf, ble_len); return ble_len; }
-        return 0;  // BLE active — don't read USB to keep its state machine clean
+        return 0;  // BLE owns binary traffic; tracking builds still collect USB text.
       }
 
       if (_ble_was_connected) {
@@ -65,7 +73,9 @@ public:
       }
     }
 
+#ifndef PRIVATE_STATUS_REPORTER
     size_t usb_len = _usb.checkRecvFrame(_usb_buf);
+#endif
     if (usb_len > 0) { memcpy(dest, _usb_buf, usb_len); return usb_len; }
     return 0;
   }

@@ -9,7 +9,11 @@
 class UITask;
 
 /*------------ Frame Protocol --------------*/
+#ifdef PRIVATE_STATUS_REPORTER
+#define FIRMWARE_VER_CODE 14 // Local companion-app CLI
+#else
 #define FIRMWARE_VER_CODE 13
+#endif
 
 // Fallback only -- every real build (local or CI) goes through build.sh, which
 // always injects its own FIRMWARE_BUILD_DATE (today's date at build time).
@@ -348,6 +352,17 @@ public:
     return true;
   }
 
+#ifdef PRIVATE_STATUS_REPORTER
+  bool runTrackingCommand(const char* command, char* reply) { return handleStatusCommand(command, reply); }
+  uint32_t trackingInterval() const { return tracker_prefs.status_interval; }
+  uint8_t trackingChannel() const { return tracker_prefs.status_channel; }
+  const char* trackingChannelName() const { return tracker_prefs.status_name; }
+  bool trackingAcquiring() const { return acquiring_position; }
+  bool isPrivateTrackingChannel(uint8_t slot) {
+    ChannelDetails channel;
+    return getChannel(slot, channel) && !privateStatusChannel(channel);
+  }
+#endif
   bool advertLocationDisabled() const {
 #ifdef PRIVATE_STATUS_REPORTER
     return true;
@@ -518,6 +533,7 @@ private:
   uint32_t next_status = 0;
   uint32_t last_position_save = 0;
   bool handleStatusCommand(const char* command, char* reply);
+  void handleAppCLI(size_t len);
   const char* verifyStatus(ChannelDetails& channel);
   const char* privateStatusChannel(const ChannelDetails& channel);
   bool sendStatus();

@@ -2,12 +2,23 @@
 
 This is a developer reference for `MyMesh::handleStatusCommand` in
 [`examples/companion_radio/MyMesh.cpp`](../examples/companion_radio/MyMesh.cpp).
-The commands below exist in the current `PRIVATE_STATUS_REPORTER` implementation.
-They are not a tested, universal onboarding sequence for every board or firmware.
+The commands below are handled by the current `PRIVATE_STATUS_REPORTER` implementation.
 
-The terminal handler currently runs inside Solo CLI rescue mode. Serial framing,
-entry controls and transport support must be checked for the selected build.
-The generic user guide is [tracking.md](tracking.md); board constraints are in
+## Choosing an interface
+
+- **Android/iOS app:** reconnect after a firmware update so the app reads protocol
+  version 14. Its local companion CLI sends command 66 and receives text reply 29.
+- **USB terminal:** open the device port at 115200 baud and send commands ending
+  in CR, LF or CRLF. Tracker commands work during normal operation; rescue-mode
+  entry is not required. Binary companion frames remain supported.
+- **On the device:** open **Settings → Tracking** for tracking on/off, private
+  channel selection, interval editing, GPS state, report-now and channel checks.
+
+All three interfaces use the same tracking command handler and saved preferences.
+A private channel must already exist before selecting it. Selecting a channel and
+turning tracking on are user actions; testing does not silently configure them.
+
+The general guide is [tracking.md](tracking.md); board details are in
 [hardware.md](hardware.md).
 
 ## Implemented commands
@@ -37,4 +48,16 @@ coordinate. A `READY` response does not test GPS hardware, radio delivery,
 power consumption, or device compatibility. It is an optional developer diagnostic.
 
 `exit` leaves the current rescue handler and resumes companion protocol handling.
-There is no claim that every target exposes the same terminal entry procedure.
+Normal USB tracker commands continue to work afterward. Filesystem rescue commands
+remain restricted to rescue mode.
+
+
+## Verification scope
+
+The connected Wio e-ink was used to verify USB terminal command responses, GPS
+acquisition start/stop, settings restoration, and binary companion queries. App
+CLI request/reply frames are exercised separately from the phone UI; a protocol
+check is not a claim that every mobile app version has been manually tested.
+
+Screenshot tooling now uses extension command/reply `0x7E`, matching newer Solo.
+The old screenshot IDs 66/29 conflicted with the official local CLI protocol.

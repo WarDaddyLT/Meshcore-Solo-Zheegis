@@ -53,8 +53,8 @@ PLATFORMIO_BUILD_FLAGS="-D ENABLE_SCREENSHOT" pio run -e <env> -t upload
 
 **How it works:**
 
-- The tool sends `CMD_GET_SCREENSHOT` (66) to the device
-- The device replies with `RESP_CODE_SCREENSHOT` (29) carrying the framebuffer
+- The tool sends `CMD_GET_SCREENSHOT` (0x7E) to the device
+- The device replies with `RESP_CODE_SCREENSHOT` (0x7E) carrying the framebuffer
 - The framebuffer arrives in chunks (a 128 × 64 display is 1024 bytes, split
   across several frames), which the tool reassembles into a PNG
 

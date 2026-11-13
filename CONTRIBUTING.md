@@ -40,6 +40,10 @@ python3 test/tracking/test_status.py
 python3 test/tracking/test_cycle.py
 python3 test/tracking/test_dispatch.py
 python3 test/tracking/test_persistence.py
+python3 test/tracking/test_serial_cli.py
+python3 test/tracking/test_app_cli.py
+python3 test/tracking/test_calendar.py
+python3 test/tracking/test_tracking_menu.py
 python3 scripts/check_project_docs.py
 pio run -e LilyGo_T-Echo-Lite_keyshield_zygis -e ThinkNode_M5_zygis
 ```

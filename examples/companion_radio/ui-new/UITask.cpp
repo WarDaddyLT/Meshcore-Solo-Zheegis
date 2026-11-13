@@ -1,5 +1,6 @@
 #include "../TrackerAudio.h"
 #include "UITask.h"
+#include "CalendarView.h"
 #include "SoundNotifier.h"
 #include <helpers/TxtDataHelpers.h>
 #include "../MyMesh.h"
@@ -861,8 +862,18 @@ public:
           miniIconDrawTop(display, 0, 0, ICON_ALARM);
         }
 
-        int sep_y  = date_y + lh + 1;
-        int dash0  = sep_y + display.sepH() + 2;
+        int sep_y = date_y + lh + 1;
+        if (display.isEink() && display.height() > display.width()) {
+          const int top = date_y + lh + 3;
+          const int grid_h = calendar::height(display, *ti);
+          if (top + grid_h + 2 <= display.height()) {
+            uint32_t marks = _node_prefs ? calmath::alarmDays(*ti, _node_prefs->alarm_on,
+                _node_prefs->alarm_repeat_mask, _node_prefs->alarm_hour, _node_prefs->alarm_min) : 0;
+            calendar::draw(display, 0, top, display.width(), *ti, marks);
+            sep_y = top + grid_h + 2;
+          }
+        }
+        int dash0 = sep_y + display.sepH() + 2;
         display.fillRect(0, sep_y, display.width(), display.sepH());
 
         // dashboard data fields
@@ -871,7 +882,7 @@ public:
           const int FIELD_Y[3] = { dash0, dash0 + step, dash0 + step * 2 };
           for (int fi = 0; fi < 3; fi++) {
             uint8_t field = _node_prefs->dashboard_fields[fi];
-            if (field == DASH_NONE) continue;
+            if (field == DASH_NONE || FIELD_Y[fi] + lh > display.height()) continue;
 
             char label[10], val[20];
             label[0] = '\0';
@@ -3661,7 +3672,7 @@ void UITask::toggleGPS() {
 // set a specific state rather than flip whatever it currently is.
 void UITask::applyGpsState(bool on) {
 #ifdef PRIVATE_STATUS_REPORTER
-  showAlert("GPS: tracker CLI", 800);
+  showAlert("Use Settings > Tracking", 1200);
   return;
 #endif
   if (_sensors == NULL) return;
