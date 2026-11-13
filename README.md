@@ -4,7 +4,7 @@
 
 [![Žygis checks](https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis/actions/workflows/run-unit-tests.yml/badge.svg?branch=main)](https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis/actions/workflows/run-unit-tests.yml)
 
-**Community preview** · T-Echo Lite + KeyShield and ThinkNode M5 · Built for exploration with the Lithuanian MeshCore community.
+**Community preview** · Built for exploration with the MeshCore community.
 
 **Offline GPS navigation, private location tracking, and messaging over LoRa mesh.**
 
@@ -23,13 +23,19 @@ Built on [MeshCore Solo](https://github.com/MarekZegare4/MeshCore-Solo) and
 
 ## Start here
 
-- **Explore:** [Lithuanian overview](README.lt.md) and [tracking examples](#request-locations-and-send-alerts).
-- **Try a build:** [supported tracking hardware](#tracking-hardware) and [setup](#build-and-get-started).
-- **Join in:** [ask a question or share feedback](https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis/discussions), [report a bug](https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis/issues/new/choose), or [contribute](CONTRIBUTING.md).
+1. **Choose your hardware and build target.** Check the [hardware support notes](#hardware-support)
+   and the [board configurations](solo/) for your device.
+2. **Build and flash the firmware.** Follow [building and installation](#build-and-get-started)
+   and the instructions for your board.
+3. **Join your mesh.** Match the radio settings used by your group and create or
+   import a private channel through a compatible MeshCore companion app.
+4. **Configure tracking for your build.** Follow the [tracker setup guide](docs/techo_lite_status.md)
+   for the target you are using. Configuration controls depend on the build.
+5. **Use the device.** Send messages, save waypoints, or try the
+   [tracking commands](#request-locations-and-send-alerts) in your configured channel.
 
-This preview has passing software checks and local firmware builds. Device
-validation is still pending; it is not presented as a field-tested release.
-See the [project roadmap](ROADMAP.md) and [changelog](CHANGELOG.md).
+This preview has passing software checks and firmware builds. Physical-device
+validation is still pending. See the [roadmap](ROADMAP.md) and [changelog](CHANGELOG.md).
 
 ## What you can do
 
@@ -94,55 +100,42 @@ Discovery reports directly reachable repeaters, signal strength, and signal-to-n
 ratios. Route acknowledgements show incoming repeater hashes. Despite the command
 name, `!triangulate` does not calculate a geographic position.
 
-## Tracking hardware
+## Hardware support
 
-| Device | Build environment | Device feedback |
-| --- | --- | --- |
-| LilyGO T-Echo Lite + KeyShield | `LilyGo_T-Echo-Lite_keyshield_zygis` | Kit speaker, keypad, GPS-fix and position-transmit LEDs |
-| ThinkNode M5 | `ThinkNode_M5_zygis` | Built-in buzzer; physical GPS switch must stay enabled |
+The project aims to bring navigation, messaging, and private tracking across
+hardware supported by MeshCore Solo. Feature availability depends on each board's
+GPS, display, controls, audio hardware, and build configuration.
 
-The T-Echo Lite blinks green after a GPS fix and blue after a position-bearing
-report finishes transmitting. The original Solo environments remain available;
-Žygis tracking is enabled by the two environments above.
-
-Firmware builds and host checks pass. Physical GPS, sound, keypad, LEDs,
-persistence, and power consumption still require validation on the devices.
+Existing Solo board configurations are retained. Žygis tracking coverage is being
+extended across targets; an inherited board configuration does not mean every
+tracking feature is enabled or tested on that board. Check the
+[Solo hardware reference](README-Solo.md#supported-devices), [Solo build targets](solo/),
+and [current tracker integration notes](docs/techo_lite_status.md) for the
+configuration you intend to use.
 
 ## Build and get started
 
-Install PlatformIO, clone this repository, and build for your device:
+Install PlatformIO and clone the repository:
 
 ```sh
 git clone https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis.git
 cd Meshcore-Solo-Zheegis
-pio run -e LilyGo_T-Echo-Lite_keyshield_zygis
-# Or:
-pio run -e ThinkNode_M5_zygis
+pio project config
 ```
 
-For upload instructions, see the [Solo hardware and flashing reference](README-Solo.md#flashing).
-The M5 tracking target changes the partition layout to fit the firmware: back up
-device data and perform a full USB flash for the first migration. An
-application-only OTA update does not install the new partition table.
+Choose the environment matching your device and required features, then build it
+with `pio run -e YOUR_ENVIRONMENT`, replacing `YOUR_ENVIRONMENT` with that
+configuration's actual name. Target definitions live in `solo/` and `variants/`.
 
-Create or import a private channel with a newly generated secret in your
-companion app. Match the radio settings to your mesh. Open the USB terminal at
-115200 baud and hold the user button within eight seconds of startup to enter
-CLI rescue mode:
+Follow the [flashing instructions](README-Solo.md#flashing) for your board. Review
+any target-specific partition or storage migration requirements before flashing.
 
-```text
-status channels
-status channel 1
-status interval 300
-gps on
-verify
-exit
-```
-
-Replace `1` with your private channel slot. `verify` checks the binding; `exit`
-restores normal companion app traffic. Use `gps off` to pause tracking or
-`status send` for a manual report. The [complete tracker guide](docs/techo_lite_status.md)
-covers diagnostics, interval behavior, alerts, and discovery.
+After installation, match your group's radio settings and create or import a
+private channel in a compatible companion app. Use the target's documented
+configuration method to select the tracking channel and reporting interval.
+The [tracker setup guide](docs/techo_lite_status.md) describes the current
+implementation, diagnostics, alerts, and discovery. Device setup still needs
+physical validation; build and host-test results do not establish it.
 
 ## Privacy and delivery
 

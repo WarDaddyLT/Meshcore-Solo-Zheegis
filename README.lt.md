@@ -29,17 +29,17 @@ atidaryti telefone gali reikėti interneto.
 - **Tiesioginių retransliatorių paieška:** parodomi pasiekiami retransliatoriai
   ir jų signalų duomenys. Komanda `!triangulate` koordinačių neapskaičiuoja.
 
-## Palaikomi sekimo įrenginiai
+## Įrenginių palaikymas
 
-| Įrenginys | PlatformIO aplinka |
-| --- | --- |
-| LilyGO T-Echo Lite su KeyShield | `LilyGo_T-Echo-Lite_keyshield_zygis` |
-| ThinkNode M5 | `ThinkNode_M5_zygis` |
+Projekto tikslas – navigacijos, žinučių ir privataus vietos bendrinimo funkcijas
+pritaikyti „MeshCore Solo“ palaikomai įrangai. Galimybės priklauso nuo įrenginio
+GPS, ekrano, valdiklių, garso įrangos ir pasirinktos kompiliavimo konfigūracijos.
 
-T-Echo Lite naudojamas „KeyShield“ garsiakalbis ir klaviatūra. Žalias LED
-praneša apie GPS vietos nustatymą, mėlynas – apie išsiųstą vietos ataskaitą.
-M5 naudojamas integruotas garsinis signalizatorius; jo fizinis GPS jungiklis
-turi likti įjungtas.
+Išsaugotos ankstesnės „Solo“ konfigūracijos. „Žygio“ funkcijos dar pritaikomos
+skirtingiems įrenginiams, todėl esanti plokštės konfigūracija savaime nereiškia,
+kad visos sekimo funkcijos joje įjungtos ar patikrintos. Žr.
+[įrangos aprašą](README-Solo.md#supported-devices), [kompiliavimo aplinkas](solo/)
+ir [dabartinės integracijos informaciją](docs/techo_lite_status.md).
 
 ## Komandų pavyzdžiai
 
@@ -61,38 +61,31 @@ periodines užklausas; `!power down` sustabdo ir vykstantį GPS vietos nustatym�
 
 ## Kaip pradėti?
 
-1. Įsidiekite „PlatformIO“ ir atsisiųskite šią saugyklą.
-2. Sukompiliuokite savo įrenginio aplinką:
+1. Pasirinkite savo įrenginio konfigūraciją ir patikrinkite, kurios funkcijos joje įjungtos.
+2. Įsidiekite „PlatformIO“, atsisiųskite saugyklą ir sukompiliuokite pasirinktą aplinką:
 
    ```sh
-   pio run -e LilyGo_T-Echo-Lite_keyshield_zygis
-   # Arba:
-   pio run -e ThinkNode_M5_zygis
+   git clone https://github.com/WarDaddyLT/Meshcore-Solo-Zheegis.git
+   cd Meshcore-Solo-Zheegis
+   pio project config
    ```
 
-3. Vadovaukitės [įrašymo ir nustatymo instrukcija](README.md#build-and-get-started).
-   M5 keičiamas atminties skaidinių išdėstymas: pirmą kartą reikia viso įrašymo
-   per USB ir ankstesnių duomenų atsarginės kopijos.
-4. Programėlėje sukurkite privatų kanalą su nauju atsitiktiniu raktu. USB terminale
-   įjunkite CLI atkūrimo režimą ir pasirinkite kanalo numerį:
+   Kompiliuokite komanda `pio run -e YOUR_ENVIRONMENT`, vietoj `YOUR_ENVIRONMENT`
+   įrašydami savo konfigūracijos pavadinimą.
+3. Įrašykite programinę įrangą pagal [savo plokštės instrukciją](README-Solo.md#flashing).
+   Prieš įrašydami patikrinkite konkrečios konfigūracijos atminties keitimo reikalavimus.
+4. Suderinkite radijo nustatymus su savo grupe ir suderinamoje programėlėje
+   sukurkite arba importuokite privatų kanalą.
+5. Pagal [pasirinktos aplinkos sekimo vadovą](docs/techo_lite_status.md)
+   nustatykite sekimo kanalą bei ataskaitų intervalą ir išbandykite žinutes bei komandas.
 
-   ```text
-   status channels
-   status channel 1
-   status interval 300
-   gps on
-   verify
-   exit
-   ```
-
-CLI režimas įjungiamas palaikius naudotojo mygtuką per pirmąsias aštuonias
-sekundes po paleidimo; terminalo greitis – 115200. `1` pakeiskite savo kanalo
-numeriu. Išsami informacija – [sekimo vadove anglų kalba](docs/techo_lite_status.md).
+Konfigūravimo būdas priklauso nuo pasirinktos aplinkos. Veikimas su fiziniais
+įrenginiais dar turi būti patikrintas.
 
 ## Dabartinė būsena
 
 Tai **bendruomenei skirta bandomoji versija**. Automatiniai programinės įrangos
-testai ir vietiniai abiejų įrenginių kompiliavimai atlikti, tačiau veikimas su
+testai ir vietiniai programinės įrangos kompiliavimai atlikti, tačiau veikimas su
 fiziniais įrenginiais dar turi būti patikrintas. GPS be vietos nustatymo laiko
 apribojimo gali ilgai likti įjungtas. Navigacija naudoja sekimo metu gaunamus
 GPS duomenis; tarp ciklų GPS miega.
