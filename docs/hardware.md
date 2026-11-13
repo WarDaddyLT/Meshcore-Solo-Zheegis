@@ -11,6 +11,7 @@ scope. See the [tracking guide](tracking.md) for shared behavior and the
 | --- | --- | --- |
 | LilyGO T-Echo Lite + KeyShield | `LilyGo_T-Echo-Lite_keyshield_zygis` | ES8311 speaker, existing TCA8418 keypad driver, status LEDs |
 | ThinkNode M5 | `ThinkNode_M5_zygis` | Built-in buzzer and board-specific GPS power controls |
+| Seeed Wio Tracker L1 e-ink | `WioTrackerL1Eink_zygis` | Solo e-ink display/joystick, onboard GPS and buzzer, dual BLE/USB |
 
 These environments have successful build checks. Physical GPS, controls, sound,
 LEDs, persistence and power use still need validation. Other Solo environments
@@ -52,6 +53,16 @@ pio run -e ThinkNode_M5_zygis
 Append `-t upload --upload-port YOUR_PORT` only after identifying the correct
 port and reviewing the board's flashing/storage requirements. Port names depend
 on the connected device and operating system.
+
+## Wio Tracker L1 e-ink notes
+
+`WioTrackerL1Eink_zygis` extends the existing e-ink Solo dual-interface target
+and enables the shared tracking implementation. It retains the board's existing
+GPS provider, display, joystick and buzzer. USB flashing uses the configured
+nRF DFU uploader; a UF2 artifact is also generated.
+
+A successful build or firmware upload alone does not establish GPS, radio,
+audio or battery behavior. Record those checks separately.
 
 ## Adding another board
 

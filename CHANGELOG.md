@@ -6,6 +6,8 @@
 
 ### Added
 
+- Wio Tracker L1 e-ink tracking target based on the Solo BLE/USB build.
+
 - Private-channel GPS/battery reports, remote tracking controls, and persistent
   channel binding independent of Solo's preference schema.
 - Targeted messages, fullscreen alerts, repeating alarms and route ACKs.

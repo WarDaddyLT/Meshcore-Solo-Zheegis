@@ -51,6 +51,8 @@ jobs:
             environment: LilyGo_T-Echo-Lite_keyshield_zygis
           - board: ThinkNode M5
             environment: ThinkNode_M5_zygis
+          - board: Wio Tracker e-ink
+            environment: WioTrackerL1Eink_zygis
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
