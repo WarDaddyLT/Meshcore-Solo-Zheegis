@@ -36,10 +36,10 @@ configuration has its own versioned record. See [AGENTS.md](AGENTS.md).
 
 ```sh
 pio test -e native -e native_kiss_modem -vv
-python3 test/techo_status/test_status.py
-python3 test/techo_status/test_cycle.py
-python3 test/techo_status/test_dispatch.py
-python3 test/techo_status/test_persistence.py
+python3 test/tracking/test_status.py
+python3 test/tracking/test_cycle.py
+python3 test/tracking/test_dispatch.py
+python3 test/tracking/test_persistence.py
 python3 scripts/check_project_docs.py
 pio run -e LilyGo_T-Echo-Lite_keyshield_zygis -e ThinkNode_M5_zygis
 ```

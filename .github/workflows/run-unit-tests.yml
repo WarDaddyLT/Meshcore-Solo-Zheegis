@@ -30,10 +30,10 @@ jobs:
         run: python scripts/check_project_docs.py
       - name: Tracker regression checks
         run: |
-          python test/techo_status/test_status.py
-          python test/techo_status/test_cycle.py
-          python test/techo_status/test_dispatch.py
-          python test/techo_status/test_persistence.py
+          python test/tracking/test_status.py
+          python test/tracking/test_cycle.py
+          python test/tracking/test_dispatch.py
+          python test/tracking/test_persistence.py
       - name: Native suites
         run: pio test -e native -e native_kiss_modem -vv
       - name: Ordinary Solo compatibility build

@@ -8,9 +8,9 @@ This roadmap describes project status, not promised release dates.
 - Private position/battery reports and persistent channel binding.
 - GPS acquisition/sleep scheduling, targeted channel commands and alerts.
 - Direct-repeater discovery and route acknowledgements.
-- T-Echo Lite + KeyShield and ThinkNode M5 build environments.
+- Tracking-enabled build configurations; current adapters are listed in [hardware integration](docs/hardware.md).
 - English and Lithuanian introductions, setup guides, and contribution templates.
-- Host regression tests and CI for the two tracking firmware builds.
+- Shared tracking regression tests and CI for the integrated build targets.
 
 ## Before a field-tested release
 

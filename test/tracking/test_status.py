@@ -117,18 +117,18 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     binary = pathlib.Path(tmp) / 'leds'
-    subprocess.run(['c++', '-std=c++11', '-Wall', '-Wextra', '-Werror', str(root / 'test/techo_status/test_leds.cpp'), '-o', str(binary)], check=True)
+    subprocess.run(['c++', '-std=c++11', '-Wall', '-Wextra', '-Werror', str(root / 'test/tracking/test_leds.cpp'), '-o', str(binary)], check=True)
     subprocess.run([str(binary)], check=True)
     print('LED burst timing and millis wrap checks passed')
 
 with tempfile.TemporaryDirectory() as tmp:
     binary = pathlib.Path(tmp) / 'tracker'
-    subprocess.run(['c++', '-std=c++11', '-Wall', '-Wextra', '-Werror', str(root / 'test/techo_status/test_tracker.cpp'), '-o', str(binary)], check=True)
+    subprocess.run(['c++', '-std=c++11', '-Wall', '-Wextra', '-Werror', str(root / 'test/tracking/test_tracker.cpp'), '-o', str(binary)], check=True)
     subprocess.run([str(binary)], check=True)
     print('Tracker targeting, command/chirp routing, and single-packet help checks passed')
 
 with tempfile.TemporaryDirectory() as tmp:
     binary = pathlib.Path(tmp) / 'fullscreen'
-    subprocess.run(['c++', '-std=c++11', '-Wall', '-Wextra', '-Werror', str(root / 'test/techo_status/test_fullscreen.cpp'), '-o', str(binary)], check=True)
+    subprocess.run(['c++', '-std=c++11', '-Wall', '-Wextra', '-Werror', str(root / 'test/tracking/test_fullscreen.cpp'), '-o', str(binary)], check=True)
     subprocess.run([str(binary)], check=True)
     print('Fullscreen largest-fitting font and long-message wrapping checks passed')

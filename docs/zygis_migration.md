@@ -33,7 +33,7 @@ The project repository is
 ## Validation
 
 Run both tracker builds, the two PlatformIO native suites, and all four Python
-checks in `test/techo_status/`. Keep physical-device verification separate:
+checks in `test/tracking/`. Keep physical-device verification separate:
 GPS cold start and reacquisition, paused listening, reboot persistence,
 private-channel rebinding, alarm/message dismissal, audio, LEDs and current draw.
 No firmware was flashed as part of the source migration.

@@ -8,7 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 GUIDES = [
     'README.md', 'README.lt.md', 'README-Solo.md', 'AGENTS.md',
     'CONTRIBUTING.md', 'SECURITY.md', 'ROADMAP.md', 'CHANGELOG.md', 'RELEASE.md',
-    'docs/techo_lite_status.md', 'docs/zygis_migration.md',
+    'docs/tracking.md', 'docs/hardware.md', 'docs/tracking-cli.md',
+    'docs/zygis_migration.md',
     'docs/upstream-maintenance.md', 'docs/community-intro.lt.md',
     'docs/upstream-funding.md',
 ]

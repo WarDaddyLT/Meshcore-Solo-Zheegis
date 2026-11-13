@@ -39,7 +39,7 @@ Išsaugotos ankstesnės „Solo“ konfigūracijos. „Žygio“ funkcijos dar p
 skirtingiems įrenginiams, todėl esanti plokštės konfigūracija savaime nereiškia,
 kad visos sekimo funkcijos joje įjungtos ar patikrintos. Žr.
 [įrangos aprašą](README-Solo.md#supported-devices), [kompiliavimo aplinkas](solo/)
-ir [dabartinės integracijos informaciją](docs/techo_lite_status.md).
+ir [dabartinės integracijos informaciją](docs/tracking.md).
 
 ## Komandų pavyzdžiai
 
@@ -76,7 +76,7 @@ periodines užklausas; `!power down` sustabdo ir vykstantį GPS vietos nustatym�
    Prieš įrašydami patikrinkite konkrečios konfigūracijos atminties keitimo reikalavimus.
 4. Suderinkite radijo nustatymus su savo grupe ir suderinamoje programėlėje
    sukurkite arba importuokite privatų kanalą.
-5. Pagal [pasirinktos aplinkos sekimo vadovą](docs/techo_lite_status.md)
+5. Pagal [pasirinktos aplinkos sekimo vadovą](docs/tracking.md)
    nustatykite sekimo kanalą bei ataskaitų intervalą ir išbandykite žinutes bei komandas.
 
 Konfigūravimo būdas priklauso nuo pasirinktos aplinkos. Veikimas su fiziniais

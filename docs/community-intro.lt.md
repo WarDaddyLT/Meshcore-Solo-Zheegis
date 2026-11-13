@@ -14,8 +14,8 @@ adresuotus pranešimus ir garsinį signalą `!tikra`. GPS tarp ataskaitų gali m
 o radijas toliau klausosi. Taip pat galima stebėti tiesiogiai pasiekiamus
 retransliatorius ir jų signalų duomenis.
 
-Šiuo metu sekimo aplinkos paruoštos **T-Echo Lite su KeyShield** ir
-**ThinkNode M5**. Tai bendruomenei skirta bandomoji versija: programinės įrangos
+Tikslas – šias funkcijas pritaikyti „MeshCore Solo“ palaikomai įrangai;
+įrenginių integracija plečiama. Tai bendruomenei skirta bandomoji versija: programinės įrangos
 testai bei vietiniai kompiliavimai atlikti, tačiau bandymai su fiziniais
 įrenginiais dar laukia. Norėčiau bendruomenės pastabų dėl naudojimo, lietuviškų
 instrukcijų ir tolesnių funkcijų.

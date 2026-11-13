@@ -14,6 +14,11 @@
 - Regression checks for privacy, dispatch, GPS cycling, layout, LEDs and persistence.
 - English and Lithuanian project introductions, community templates and CI.
 
+### Documentation
+
+- Generalized the tracking guide and test suite names; separated board adapters
+  and developer CLI details from shared usage documentation.
+
 ### Fixed
 
 - Native Linux simulator builds now include the fixed-width integer types used

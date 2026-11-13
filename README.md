@@ -29,7 +29,7 @@ Built on [MeshCore Solo](https://github.com/MarekZegare4/MeshCore-Solo) and
    and the instructions for your board.
 3. **Join your mesh.** Match the radio settings used by your group and create or
    import a private channel through a compatible MeshCore companion app.
-4. **Configure tracking for your build.** Follow the [tracker setup guide](docs/techo_lite_status.md)
+4. **Configure tracking for your build.** Follow the [tracker setup guide](docs/tracking.md)
    for the target you are using. Configuration controls depend on the build.
 5. **Use the device.** Send messages, save waypoints, or try the
    [tracking commands](#request-locations-and-send-alerts) in your configured channel.
@@ -110,7 +110,7 @@ Existing Solo board configurations are retained. Žygis tracking coverage is bei
 extended across targets; an inherited board configuration does not mean every
 tracking feature is enabled or tested on that board. Check the
 [Solo hardware reference](README-Solo.md#supported-devices), [Solo build targets](solo/),
-and [current tracker integration notes](docs/techo_lite_status.md) for the
+and [current tracker integration notes](docs/tracking.md) for the
 configuration you intend to use.
 
 ## Build and get started
@@ -133,7 +133,7 @@ any target-specific partition or storage migration requirements before flashing.
 After installation, match your group's radio settings and create or import a
 private channel in a compatible companion app. Use the target's documented
 configuration method to select the tracking channel and reporting interval.
-The [tracker setup guide](docs/techo_lite_status.md) describes the current
+The [tracker setup guide](docs/tracking.md) describes the current
 implementation, diagnostics, alerts, and discovery. Device setup still needs
 physical validation; build and host-test results do not establish it.
 
@@ -152,13 +152,14 @@ queueing does not guarantee receipt by every member of the group.
 
 ```sh
 pio test -e native -e native_kiss_modem -vv
-python3 test/techo_status/test_status.py
-python3 test/techo_status/test_cycle.py
-python3 test/techo_status/test_dispatch.py
-python3 test/techo_status/test_persistence.py
+python3 test/tracking/test_status.py
+python3 test/tracking/test_cycle.py
+python3 test/tracking/test_dispatch.py
+python3 test/tracking/test_persistence.py
 ```
 
-- [Tracker setup and command reference](docs/techo_lite_status.md)
+- [Tracking guide and channel commands](docs/tracking.md)
+- [Hardware integration reference](docs/hardware.md) · [developer CLI reference](docs/tracking-cli.md)
 - [Solo navigation and tools](docs/solo_features/tools_screen/tools_screen.md)
 - [Solo messaging interface](docs/solo_features/message_screen/message_screen.md)
 - [Solo hardware, flashing, and feature reference](README-Solo.md)
