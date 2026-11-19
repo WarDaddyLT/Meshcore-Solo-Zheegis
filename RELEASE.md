@@ -30,3 +30,20 @@ not create a release or tag. Diagnostic environments are named `*_test`.
 
 To build and package an environment locally, run
 `python3 scripts/zygis_release.py WioTrackerL1_zygis`.
+
+## OLED games build
+
+Use `WioTrackerL1_zygis_arena` for the OLED Wios with games. It includes the
+tracker and channel lock alongside offline games, Tic-Tac-Toe multiplayer,
+Veylith Arena and LoRa Checkers. The Arena profile uses a smaller offline
+message queue and omits flash-backed chat history to fit the OLED firmware.
+
+On both radios, open **Tools → Games → LoRa Checkers**. One player selects
+**Host game** and chooses a private channel. The other selects **Find game**
+and opens that lobby. Use the joystick to select a piece and its destination.
+The board is oriented with your pieces at the bottom. During a chain capture,
+select the next destination to continue. After a match, press Enter for a
+rematch or Menu to leave.
+
+Game sends wait while tracker reports or other radio traffic are queued.
+Tracking alarms take priority over the game display and sound.

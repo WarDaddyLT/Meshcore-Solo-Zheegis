@@ -59,10 +59,7 @@ public:
     } else if(_view==RESULT) {
       if(key==KEY_ENTER)start();
     } else if(_game.turn()==1) {
-      if(key==KEY_LEFT && _cursor%8)--_cursor;
-      if(key==KEY_RIGHT && _cursor%8<7)++_cursor;
-      if(key==KEY_UP && _cursor>=8)_cursor-=8;
-      if(key==KEY_DOWN && _cursor<56)_cursor+=8;
+      moveCursor(_cursor, key);
       if(key==KEY_ENTER) {
         int square=solo_games::Checkers::square(_cursor/8,_cursor%8);
         if(square<0)return true;
@@ -73,6 +70,34 @@ public:
       }
     }
     return true;
+  }
+  static void moveCursor(uint8_t& cursor, uint8_t key) {
+    if (key == KEY_LEFT && cursor % 8) --cursor;
+    if (key == KEY_RIGHT && cursor % 8 < 7) ++cursor;
+    if (key == KEY_UP && cursor >= 8) cursor -= 8;
+    if (key == KEY_DOWN && cursor < 56) cursor += 8;
+  }
+  static void drawBoard(DisplayDriver& d, const solo_games::Checkers& game,
+                        uint8_t cursor, uint8_t selected, int side = 1) {
+    solo_games::Checkers::Move moves[solo_games::Checkers::MAX_MOVES];unsigned count=game.legalMoves(moves);
+    for(int row=0;row<8;++row)for(int col=0;col<8;++col) {
+      int x=2+col*7,y=6+row*7,square=solo_games::Checkers::square(side == 1 ? row : 7 - row, side == 1 ? col : 7 - col);
+      if(square<0){d.setColor(UIColor::primary_txt);d.fillRect(x,y,7,7);}
+      else {
+        int piece=game.at(square) * side;d.setColor(UIColor::primary_txt);
+        if(piece>0)d.fillRect(x+1,y+1,5,5);
+        if(piece<0)d.drawRect(x+1,y+1,5,5);
+        if(piece==2 || piece==-2){d.setColor(piece>0?UIColor::window_bkg:UIColor::primary_txt);d.fillRect(x+3,y+3,1,1);}
+        if((game.captured()>>square)&1) {
+          d.setColor(UIColor::window_bkg);d.fillRect(x+1,y+2,5,1);
+          d.setColor(UIColor::primary_txt);d.fillRect(x+1,y+3,5,1);
+        }
+        d.setColor(UIColor::primary_txt);
+        if(selected==square)d.drawRect(x,y,7,7);
+        for(unsigned i=0;i<count;++i)if(moves[i].from==selected && moves[i].to==square)d.fillRect(x+3,y+3,1,1);
+      }
+      if(cursor==row*8+col){d.setColor(square<0?UIColor::window_bkg:UIColor::primary_txt);d.drawRect(x,y,7,7);}
+    }
   }
   int render(DisplayDriver& d) {
     d.setTextSize(1);d.setColor(UIColor::primary_txt);
@@ -87,25 +112,7 @@ public:
       }
       return 300;
     }
-    solo_games::Checkers::Move moves[solo_games::Checkers::MAX_MOVES];unsigned count=_game.legalMoves(moves);
-    for(int row=0;row<8;++row)for(int col=0;col<8;++col) {
-      int x=2+col*7,y=6+row*7,square=solo_games::Checkers::square(row,col);
-      if(square<0){d.setColor(UIColor::primary_txt);d.fillRect(x,y,7,7);}
-      else {
-        int piece=_game.at(square);d.setColor(UIColor::primary_txt);
-        if(piece>0)d.fillRect(x+1,y+1,5,5);
-        if(piece<0)d.drawRect(x+1,y+1,5,5);
-        if(piece==2 || piece==-2){d.setColor(piece>0?UIColor::window_bkg:UIColor::primary_txt);d.fillRect(x+3,y+3,1,1);}
-        if((_game.captured()>>square)&1) {
-          d.setColor(UIColor::window_bkg);d.fillRect(x+1,y+2,5,1);
-          d.setColor(UIColor::primary_txt);d.fillRect(x+1,y+3,5,1);
-        }
-        d.setColor(UIColor::primary_txt);
-        if(_selected==square)d.drawRect(x,y,7,7);
-        for(unsigned i=0;i<count;++i)if(moves[i].from==_selected && moves[i].to==square)d.fillRect(x+3,y+3,1,1);
-      }
-      if(_cursor==row*8+col){d.setColor(square<0?UIColor::window_bkg:UIColor::primary_txt);d.drawRect(x,y,7,7);}
-    }
+    drawBoard(d, _game, _cursor, _selected);
     d.setColor(UIColor::primary_txt);text(d,62,1,"CHECKERS");
     uint8_t result=_game.result();
     text(d,62,15,result?(result==3?"Draw":result==1?"You win!":"CPU wins"):_game.turn()==1?"Your turn":"Thinking");

@@ -2,6 +2,8 @@
 #include <games/multiplayer/Session.h>
 #include <games/multiplayer/SecureChannel.h>
 #include <games/multiplayer/ArenaDuel.h>
+#include <games/multiplayer/Rules.h>
+#include "CheckersScreen.h"
 #include "VeylithScreen.h"
 class ArenaOnlineScreen {
   using Session=solo_games::multiplayer::Session;
@@ -18,6 +20,10 @@ class ArenaOnlineScreen {
   };
   Match* _match=nullptr;
   VeylithScreen* _arena=nullptr;
+  solo_games::multiplayer::BoardRules* _checkers = nullptr;
+  const uint8_t _game;
+  uint8_t _cursor = 40, _selected = solo_games::Checkers::NO_SQUARE;
+  unsigned _boardRevision = 0;
   enum View:uint8_t { MENU,CHANNELS,FIND,WAITING,PLAY,ERROR };
   View _view=MENU;
   uint8_t _row=0,_channels[40]={},_count=0,_digest[16]={};
@@ -32,10 +38,99 @@ class ArenaOnlineScreen {
     c.randomBytes=[](void* p,uint8_t* out,size_t n){return static_cast<UITask*>(p)->gameRandomBytes(out,n);};return c;
   }
   static void text(DisplayDriver& d,int x,int y,const char* value){d.setCursor(x,y);d.print(value);}
-  void closeMatch(){delete _arena;_arena=nullptr;delete _match;_match=nullptr;}
+  void closeMatch() {
+    delete _arena;
+    _arena = nullptr;
+    delete _match;
+    _match = nullptr;
+    delete _checkers;
+    _checkers = nullptr;
+  }
+  const char* title() const {
+    return _game == solo_games::multiplayer::CHECKERS ? "LORA CHECKERS" : "ARENA MULTIPLAYER";
+  }
+  void beginMatch() {
+    closeMatch();
+    if (_game == solo_games::multiplayer::CHECKERS) {
+      _checkers = new (std::nothrow) solo_games::multiplayer::BoardRules(_session, _security);
+      if (!_checkers || _checkers->error()) { error("Not enough RAM"); return; }
+      _cursor = 40;
+      _selected = solo_games::Checkers::NO_SQUARE;
+      _boardRevision = 0;
+    } else {
+      _match = new (std::nothrow) Match(_session, _security);
+      if (!_match) { error("Not enough RAM"); return; }
+      _arena = new (std::nothrow) VeylithScreen(_task, uint32_t(_session.id()), &_match->duel);
+      if (!_arena) { error("Not enough RAM"); return; }
+    }
+    _generation = _session.generation();
+    _again = false;
+    _view = PLAY;
+  }
+  void pollCheckers() {
+    solo_games::multiplayer::Message message;
+    if (_session.take(message)) {
+      int actor = _session.slotFor(message.actor);
+      if (actor < 0) { error("Game out of sync"); return; }
+      _checkers->receive(message, actor);
+    }
+    _checkers->poll(millis());
+    if (_checkers->error()) { error("Game out of sync"); return; }
+    if (_checkers->revision() != _boardRevision) {
+      _boardRevision = _checkers->revision();
+      _selected = _checkers->turn() == _session.slot()
+        ? _checkers->checkers()->forced() : solo_games::Checkers::NO_SQUARE;
+      _task->playGameSound(_checkers->finished());
+    }
+    _checkers->transmit();
+    if (_checkers->finished() && _checkers->idle()) _session.finish();
+  }
+  void checkersInput(uint8_t key) {
+    if (key == KEY_CANCEL) { leave(); _view = MENU; _row = 0; return; }
+    if (key == KEY_ENTER && _session.stalled()) { _session.retry(millis()); return; }
+    if (_checkers->finished()) {
+      if (key == KEY_ENTER && !_again && _session.rematch()) _again = true;
+      return;
+    }
+    CheckersScreen::moveCursor(_cursor, key);
+    if (key != KEY_ENTER || !_checkers->idle() || _checkers->submitted() ||
+        _checkers->turn() != _session.slot()) return;
+    using Board = solo_games::Checkers;
+    const Board& board = *_checkers->checkers();
+    const int side = _session.isHost() ? 1 : -1;
+    int row = _cursor / 8, col = _cursor % 8;
+    int square = Board::square(side == 1 ? row : 7 - row, side == 1 ? col : 7 - col);
+    if (square < 0) return;
+    if (_selected != Board::NO_SQUARE && _checkers->action(_selected, square, 0)) {
+      _selected = Board::NO_SQUARE;
+    } else if (board.at(square) * side > 0 &&
+               (board.forced() == Board::NO_SQUARE || board.forced() == square)) {
+      _selected = square;
+    }
+  }
+  int renderCheckers(DisplayDriver& d) const {
+    const auto& board = *_checkers->checkers();
+    CheckersScreen::drawBoard(d, board, _cursor, _selected, _session.isHost() ? 1 : -1);
+    d.setColor(UIColor::primary_txt);
+    text(d, 62, 1, "CHECKERS");
+    const bool local = _checkers->turn() == _session.slot();
+    if (_checkers->finished()) {
+      unsigned winners = _checkers->winnerMask();
+      text(d, 62, 16, !winners ? "Draw" : winners & (1U << _session.slot()) ? "You win" : "Peer wins");
+      text(d, 62, 32, _again ? "Waiting..." : "Enter: new");
+    } else {
+      text(d, 62, 16, local ? "Your turn" : "Peer turn");
+      text(d, 62, 32, _session.stalled() ? "Enter: retry" :
+           !_checkers->idle() || _checkers->submitted() ? "Sending..." :
+           !local ? "Waiting..." : board.mustCapture() ? "Must jump" :
+           _selected != solo_games::Checkers::NO_SQUARE ? "Select dest" : "Pick piece");
+    }
+    text(d, 62, 51, "Menu: leave");
+    return 200;
+  }
   void leave(){
     if(_bound)for(unsigned i=0;i<3;++i){Packet packet;char frame[113];if(_session.leave(i,packet)&&Codec::encode(packet,frame,sizeof(frame)))_task->sendGameText(_session.channel(),frame,_digest);}
-    closeMatch();_session.find(solo_games::multiplayer::ARENA);_bound=false;_generation=0;_again=false;
+    closeMatch();_session.find(_game);_bound=false;_generation=0;_again=false;
   }
   void error(const char* reason){_error=reason;leave();_view=ERROR;}
   unsigned lobbyCount()const{unsigned n=0;for(unsigned i=0;i<Session::LOBBIES;++i)n+=_session.lobby(i,millis())!=nullptr;return n;}
@@ -46,10 +141,11 @@ class ArenaOnlineScreen {
     _row=0;auto lobby=_session.lobby(lobbyIndex(0),millis());_selection=lobby?lobby->open.session:0;
   }
 public:
-  explicit ArenaOnlineScreen(UITask* task):_task(task),_security(callbacks(task)),_session(_security){_session.find(solo_games::multiplayer::ARENA);}
+  explicit ArenaOnlineScreen(UITask* task, uint8_t game = solo_games::multiplayer::ARENA)
+    : _task(task), _security(callbacks(task)), _session(_security), _game(game) { _session.find(game); }
   ~ArenaOnlineScreen(){leave();}
   bool wantsExit()const{return _exit;}
-  void receiveText(uint8_t channel,const char* body,const char* sender){Packet packet;if(!Codec::decode(body,packet)||packet.game!=solo_games::multiplayer::ARENA)return;
+  void receiveText(uint8_t channel,const char* body,const char* sender){Packet packet;if(!Codec::decode(body,packet)||packet.game!=_game)return;
     char name[2];uint8_t digest[16];if(!_task->gameChannel(channel,name,sizeof(name),digest))return;
     if(_bound&&(channel!=_session.channel()||memcmp(digest,_digest,16)))return;
     _session.receive(channel,packet,millis(),sender);
@@ -61,9 +157,10 @@ public:
     if(_session.phase()==Session::CLOSED){error("Other player left");return;}
     if(_view==FIND)synchronizeSelection();
     if((_session.phase()==Session::PLAYING||_session.phase()==Session::FINISHED)&&_generation!=_session.generation()){
-      closeMatch();_match=new(std::nothrow) Match(_session,_security);if(!_match){error("Not enough RAM");return;}
-      _arena=new(std::nothrow) VeylithScreen(_task,uint32_t(_session.id()),&_match->duel);
-      if(!_arena){error("Not enough RAM");return;}_generation=_session.generation();_again=false;_view=PLAY;
+      beginMatch();
+    }
+    if (_checkers) {
+      pollCheckers();
     }
     if(_match){solo_games::multiplayer::Message message;
       for(unsigned i=0;i<4&&_session.take(message);++i){int actor=_session.slotFor(message.actor);if(actor<0){error("Game out of sync");return;}_match->duel.receive(message,actor);}
@@ -80,6 +177,7 @@ public:
     }}
   }
   bool handleInput(char input){uint8_t key=uint8_t(input);
+    if (_view == PLAY && _checkers) { checkersInput(key); return true; }
     if(_view==PLAY&&_arena){if(_session.stalled()&&key==KEY_CANCEL){leave();_view=MENU;_row=0;return true;}if(_session.stalled()&&key==KEY_ENTER){_session.retry(millis());return true;}_arena->handleInput(input);return true;}
     if(key==KEY_CANCEL){if(_view==MENU)_exit=true;else{leave();_view=MENU;_row=0;}return true;}
     if(_view==MENU){if(key==KEY_UP||key==KEY_DOWN)_row=1-_row;
@@ -93,26 +191,29 @@ public:
       if(_view==CHANNELS)slot=_channels[_row];else{auto lobby=_session.lobby(lobbyIndex(_row),millis());if(!lobby)return true;slot=lobby->channel;}
       char name[2];uint8_t digest[16];if(!_task->gameChannel(slot,name,sizeof(name),digest))return true;bool ok;
       if(_view==CHANNELS){uint64_t session=0;if(!_security.random(reinterpret_cast<uint8_t*>(&session),sizeof(session))){error("Connection failed");return true;}
-        ok=_session.host(solo_games::multiplayer::ARENA,2,slot,session?session:1,_task->gameNodeName());
+        ok=_session.host(_game,2,slot,session?session:1,_task->gameNodeName());
       }else ok=_session.join(lobbyIndex(_row),millis(),_task->gameNodeName());
       if(ok){memcpy(_digest,digest,16);_bound=true;_view=WAITING;_row=0;}
     }
     return true;
   }
   int render(DisplayDriver& d){d.setTextSize(1);d.setColor(UIColor::primary_txt);
+    if (_view == PLAY && _checkers) return renderCheckers(d);
     if(_view==PLAY&&_arena){if(_session.stalled()){d.drawCenteredHeader("WAITING FOR PLAYER");text(d,0,20,"Link interrupted");text(d,0,34,"Enter: retry");text(d,0,49,"Menu: leave");return 200;}
       return _arena->render(d);}
-    d.drawCenteredHeader("ARENA MULTIPLAYER");
+    d.drawCenteredHeader(title());
     if(_view==MENU){text(d,0,18,_row==0?"> Host game":"  Host game");text(d,0,35,_row==1?"> Find game":"  Find game");text(d,0,53,"Menu: Games");}
     else if(_view==CHANNELS){if(!_count){text(d,0,16,"No private channels");text(d,0,29,"configured. Add one");text(d,0,42,"in Solo or the app.");}
       for(unsigned i=(_row/4)*4;i<_count&&i<unsigned((_row/4)*4+4);++i){char name[19];uint8_t digest[16];if(_task->gameChannel(_channels[i],name,sizeof(name),digest)){text(d,0,16+(i%4)*12,_row==i?">":" ");text(d,12,16+(i%4)*12,name);}}
     }else if(_view==FIND){unsigned count=lobbyCount();if(!count){text(d,0,22,"Listening for hosts");text(d,0,40,"Waiting for a game");}
-      for(unsigned i=(_row/2)*2;i<count&&i<unsigned((_row/2)*2+2);++i)if(auto lobby=_session.lobby(lobbyIndex(i),millis())){char name[22];snprintf(name,sizeof(name),"%c %.18s",_row==i?'>':' ',lobby->name[0]?lobby->name:"Unknown host");text(d,0,15+(i%2)*24,name);text(d,12,26+(i%2)*24,"Veylith Arena");}
+      for(unsigned i=(_row/2)*2;i<count&&i<unsigned((_row/2)*2+2);++i)if(auto lobby=_session.lobby(lobbyIndex(i),millis())){char name[22];snprintf(name,sizeof(name),"%c %.18s",_row==i?'>':' ',lobby->name[0]?lobby->name:"Unknown host");text(d,0,15+(i%2)*24,name);text(d,12,26+(i%2)*24,title());}
     }else if(_view==ERROR){text(d,0,21,_error);text(d,0,42,"Enter: multiplayer");}
     else{bool hosting=_session.isHost();text(d,0,18,hosting?"Waiting for player":"Joining game...");if(!hosting)text(d,0,34,_session.name(0));text(d,0,52,"Menu: leave");}
     return 200;
   }
 #ifdef ZYGIS_GAME_DIAGNOSTICS
-  size_t diagnostics(uint8_t* out,size_t size,size_t ownerSize)const{if(size<44)return 0;uint8_t child[44]={};if(_arena)_arena->diagnostics(child,sizeof(child),0);unsigned childView=_arena?Codec::get(child+20,4):_row;uint32_t values[]={uint32_t(ownerSize+sizeof(*this)+(_match?sizeof(Match)+sizeof(VeylithScreen):0)),uint32_t(_session.phase()),uint32_t(_session.slot()),uint32_t(_session.matchRound()),uint32_t(_session.generation()),uint32_t(_view),17,childView,_match?uint32_t(_match->duel.revision()):0,_match&&_match->duel.battle()?_match->duel.battle()->stateHash():0,_arena?uint32_t(_arena->resultStored()):0};size_t n=0;for(auto value:values)for(unsigned shift=0;shift<32;shift+=8)out[n++]=uint8_t(value>>shift);return n;}
+  size_t diagnostics(uint8_t* out,size_t size,size_t ownerSize)const{if(size<44)return 0;uint8_t child[44]={};if(_arena)_arena->diagnostics(child,sizeof(child),0);unsigned childView=_checkers?_cursor:_arena?Codec::get(child+20,4):_row;uint32_t values[]={uint32_t(ownerSize+sizeof(*this)+(_match?sizeof(Match)+sizeof(VeylithScreen):0)),uint32_t(_session.phase()),uint32_t(_session.slot()),uint32_t(_session.matchRound()),uint32_t(_session.generation()),uint32_t(_view),17,childView,_checkers?_checkers->revision():_match?uint32_t(_match->duel.revision()):0,
+      _checkers?_checkers->checkers()->stateHash():_match&&_match->duel.battle()?_match->duel.battle()->stateHash():0,
+      _checkers?_checkers->checkers()->result():_arena?uint32_t(_arena->resultStored()):0};size_t n=0;for(auto value:values)for(unsigned shift=0;shift<32;shift+=8)out[n++]=uint8_t(value>>shift);return n;}
 #endif
 };

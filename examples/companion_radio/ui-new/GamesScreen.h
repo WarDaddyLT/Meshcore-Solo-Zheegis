@@ -68,7 +68,7 @@ class GamesScreen : public UIScreen {
   void closeHoldem() {}
 #endif
 #if defined(SOLO_GAMES_MULTIPLAYER)
-  static const uint8_t MENU_COUNT = 9;
+  static const uint8_t MENU_COUNT = 10;
 #elif defined(SOLO_GAME_VEYLITH)
   static const uint8_t MENU_COUNT = 8;
 #elif defined(SOLO_GAME_HOLDEM)
@@ -299,9 +299,10 @@ public:
   }
 #endif
 #ifdef SOLO_GAMES_MULTIPLAYER
-  void openArenaMultiplayer(){
+  void openArenaMultiplayer(uint8_t game = solo_games::multiplayer::ARENA){
     closeArenaOnline();closeVeylith();closeHoldem();closeArtillery();closeBattleship();closeCheckers();closeSnake();closeNet();
-    _arenaOnline=new(std::nothrow) ArenaOnlineScreen(_task);
+    _arenaOnline=new(std::nothrow) ArenaOnlineScreen(_task, game);
+    _row = game == solo_games::multiplayer::CHECKERS ? 9 : 8;
     if(_arenaOnline)_view=ARENA_ONLINE_VIEW;else _task->showAlert("Not enough RAM",1500);
   }
 #endif
@@ -397,7 +398,7 @@ public:
       d.drawCenteredHeader(title);
     } else d.drawCenteredHeader(_view == MENU ? "GAMES" : _net ? "TTT MULTIPLAYER" : "TIC-TAC-TOE");
     if (_view == MENU) {
-      const char* labels[] = { "Tic-Tac-Toe CPU", "TTT multiplayer", "Snake", "Checkers", "Battleship", "Scorched Earth", "Texas Hold'em", "Veylith Arena", "Arena multiplayer" };
+      const char* labels[] = { "Tic-Tac-Toe CPU", "TTT multiplayer", "Snake", "Checkers", "Battleship", "Scorched Earth", "Texas Hold'em", "Veylith Arena", "Arena multiplayer", "LoRa Checkers" };
       unsigned start=(_row/4)*4;
       for (unsigned i=start;i<MENU_COUNT && i<start+4;++i) {
         text(d,2,16+(i-start)*12,_row==i?">":" "); text(d,14,16+(i-start)*12,labels[i]);
@@ -494,7 +495,7 @@ public:
     }
 #endif
 #ifdef SOLO_GAMES_MULTIPLAYER
-    if(_arenaOnline){_arenaOnline->handleInput(input);if(_arenaOnline->wantsExit()){closeArenaOnline();_view=MENU;_row=8;}return true;}
+    if(_arenaOnline){_arenaOnline->handleInput(input);if(_arenaOnline->wantsExit()){closeArenaOnline();_view=MENU;}return true;}
 #endif
     if (_net) return netInput(key);
     if (key == KEY_CANCEL) {
@@ -509,7 +510,8 @@ public:
       if (key==KEY_DOWN) _row=(_row+1)%MENU_COUNT;
       if (key==KEY_ENTER) {
 #ifdef SOLO_GAMES_MULTIPLAYER
-        if(_row==8)openArenaMultiplayer();else
+        if (_row == 9) openArenaMultiplayer(solo_games::multiplayer::CHECKERS);
+        else if(_row==8)openArenaMultiplayer();else
 #endif
 #ifdef SOLO_GAME_VEYLITH
         if(_row==7)openVeylith();else
