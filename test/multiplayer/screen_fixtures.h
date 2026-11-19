@@ -26,7 +26,17 @@ struct UITask {
  void gameSharedSecret(const uint8_t* key,uint8_t* out)const{TestIdentity::secret(const_cast<TestIdentity*>(&identity),key,out);}
  bool gameRandomBytes(uint8_t* out,size_t n){return TestIdentity::random(&identity,out,n);}
  const char* gameNodeName()const{return name.c_str();}
- bool gameChannel(uint8_t slot,char* name,size_t size,uint8_t digest[16]){if(slot!=1)return false;snprintf(name,size,"Private");memset(digest,5,16);return true;}
+ bool gameChannel(uint8_t slot, char* name, size_t capacity, uint8_t digest[16]) {
+   if (slot != 1) return false;
+   if (capacity) {
+     constexpr char label[] = "Private";
+     size_t length = capacity < sizeof(label) ? capacity - 1 : sizeof(label) - 1;
+     memcpy(name, label, length);
+     name[length] = '\0';
+   }
+   memset(digest, 5, 16);
+   return true;
+ }
  bool sendGameText(uint8_t slot,const char* text,const uint8_t digest[16]){assert(slot==1&&digest[0]==5&&strlen(text)<=112);sent.emplace_back(text);return true;}
  int loadVeylith(uint8_t* out,size_t size){if(saved.empty())return -1;if(saved.size()!=size)return -2;memcpy(out,saved.data(),size);return size;}
  bool saveVeylith(const uint8_t* in,size_t size){if(saveFail)return false;saved.assign(in,in+size);return true;}
