@@ -2039,6 +2039,14 @@ void UITask::loop() {
   }
 
   if (_kq_head != _kq_tail) {
+#ifdef ZYGIS_EINK_PORTRAIT
+    if (curr == splash && splash) {
+      char key;
+      if (dequeueKey(key)) splash->handleInput(key);
+      _kq_head = _kq_tail = 0;
+      if (_locked) _lock_wake_until = millis() + 5000;
+    } else
+#endif
     if (_unlock_kb) {
       // Lock-screen password keyboard: Consume every key press
       char k;
@@ -2107,6 +2115,15 @@ void UITask::loop() {
         _next_refresh = millis() + ((SosScreen*)sos_screen)->renderStatus(*_display);
         _display->endFrame();
       }
+#ifdef ZYGIS_EINK_PORTRAIT
+    } else if (curr == splash && splash) {
+      if (refreshDue()) {
+        _display->startFrame();
+        _badge_in_bar = false;
+        _next_refresh = millis() + splash->render(*_display);
+        _display->endFrame();
+      }
+#endif
     } else if (_locked && !_unlock_kb && (int32_t)(millis() - _lock_wake_until) >= 0) {
       _display->turnOff();
     } else if (_locked && _unlock_kb && refreshDue()) {

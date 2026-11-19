@@ -78,11 +78,26 @@ public:
         display.drawXbm(cx - zygisCrownWidth / 2, top + 142, zygisCrown, zygisCrownWidth, zygisCrownHeight);
       }
       display.setTextSize(2);
-      if (display.getTextWidth(name) > display.width() - 8) display.setTextSize(1);
-      display.drawTextCentered(cx, top + 154, name);
+      if (display.getTextWidth(name) > display.width() - 12) display.setTextSize(1);
+      // The fixed-font foreground in e-ink has tight letter spacing.
+      // Leave a visible gap when the configured name fits on one line.
+      int textWidth = display.getTextWidth(name);
+      if (strlen(name) == strspn(name, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") &&
+          textWidth + static_cast<int>(strlen(name)) * 2 <= display.width() - 8) {
+        int x = cx - (textWidth + static_cast<int>(strlen(name)) * 2) / 2;
+        for (const char* c = name; *c; ++c) {
+          const char glyph[] = {*c, '\0'};
+          display.setCursor(x, top + 154);
+          display.print(glyph);
+          x += display.getTextWidth(glyph) + 2;
+        }
+      } else {
+        display.drawTextCentered(cx, top + 154, name);
+      }
       display.setTextSize(1);
       display.drawXbm(cx - zygisCreditWidth / 2, top + 177, zygisCredit, zygisCreditWidth, zygisCreditHeight);
       display.drawTextCentered(cx, top + 193, ZYGIS_USB_VERSION);
+      display.drawTextCentered(cx, top + 210, "Press any button");
       return 1000;
     }
 #endif
@@ -131,9 +146,20 @@ public:
     return anim ? 40 : 1000;
   }
 
+  bool handleInput(char) override {
+#ifdef ZYGIS_EINK_PORTRAIT
+    _task->gotoHomeScreen();
+    return true;
+#else
+    return false;
+#endif
+  }
+
   void poll() override {
+#ifndef ZYGIS_EINK_PORTRAIT
     if ((int32_t)(millis() - dismiss_after) >= 0) {
       _task->gotoHomeScreen();
     }
+#endif
   }
 };
