@@ -63,41 +63,16 @@ public:
 #ifdef ZYGIS_EINK_PORTRAIT
     if (display.isEink() && display.height() > display.width()) {
       const int cx = display.width() / 2;
-      const int top = (display.height() - 219) / 2;
+      const int top = (display.height() - 195) / 2;
       display.setColor(UIColor::primary_txt);
       display.setTextSize(1);
       display.drawXbm(cx - zygisEmblemWidth / 2, top, zygisEmblem, zygisEmblemWidth, zygisEmblemHeight);
       display.drawXbm(cx - zygisWordmarkWidth / 2, top + 87, zygisWordmark, zygisWordmarkWidth, zygisWordmarkHeight);
       display.drawTextCentered(cx, top + 119, "MeshCore Solo");
       display.fillRect(12, top + 134, display.width() - 24, 1);
-      char name[32];
-      StrHelper::strzcpy(name, _task->getNodePrefs()->node_name, sizeof(name));
-      char* crown = strstr(name, "\xf0\x9f\x91\x91");
-      if (crown && crown[4] == '\0') {
-        *crown = '\0';
-        display.drawXbm(cx - zygisCrownWidth / 2, top + 142, zygisCrown, zygisCrownWidth, zygisCrownHeight);
-      }
-      display.setTextSize(2);
-      if (display.getTextWidth(name) > display.width() - 12) display.setTextSize(1);
-      // The fixed-font foreground in e-ink has tight letter spacing.
-      // Leave a visible gap when the configured name fits on one line.
-      int textWidth = display.getTextWidth(name);
-      if (strlen(name) == strspn(name, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") &&
-          textWidth + static_cast<int>(strlen(name)) * 2 <= display.width() - 8) {
-        int x = cx - (textWidth + static_cast<int>(strlen(name)) * 2) / 2;
-        for (const char* c = name; *c; ++c) {
-          const char glyph[] = {*c, '\0'};
-          display.setCursor(x, top + 154);
-          display.print(glyph);
-          x += display.getTextWidth(glyph) + 2;
-        }
-      } else {
-        display.drawTextCentered(cx, top + 154, name);
-      }
-      display.setTextSize(1);
-      display.drawXbm(cx - zygisCreditWidth / 2, top + 177, zygisCredit, zygisCreditWidth, zygisCreditHeight);
-      display.drawTextCentered(cx, top + 193, ZYGIS_USB_VERSION);
-      display.drawTextCentered(cx, top + 210, "Press any button");
+      display.drawXbm(cx - zygisCreditWidth / 2, top + 145, zygisCredit, zygisCreditWidth, zygisCreditHeight);
+      display.drawTextCentered(cx, top + 162, ZYGIS_USB_VERSION);
+      display.drawTextCentered(cx, top + 185, "Press any button");
       return 1000;
     }
 #endif
