@@ -1,0 +1,2339 @@
+{
+  "version": "2.1",
+  "source_gdd": "Veylith_Arena_GDD_v1.0.md",
+  "creatures": {
+    "count": 60,
+    "views": 60,
+    "width": 32,
+    "height": 32,
+    "bits_per_pixel": 1,
+    "packed_bytes": 7680,
+    "stored_views_per_species": 1,
+    "player_view": "Horizontal mirror of the front sprite at render time; no rear bitmap or scratch buffer",
+    "generated_source": "src/games/veylith/Assets.cpp"
+  },
+  "trainer": {
+    "sprite_size": [
+      24,
+      32
+    ],
+    "portrait_frames": 4,
+    "screens": 7,
+    "icons_8x8": [
+      "ember",
+      "tide",
+      "thorn",
+      "stone",
+      "spark",
+      "hp",
+      "atk",
+      "def",
+      "foc",
+      "ward",
+      "spd",
+      "attack",
+      "defense",
+      "support",
+      "revive",
+      "buff",
+      "debuff",
+      "switch",
+      "status",
+      "cursor",
+      "xp",
+      "level",
+      "move"
+    ],
+    "species_mini_icons_16x16": 60,
+    "level_progress_frames": [
+      "trainer/level_progress_0of3_32x7.png",
+      "trainer/level_progress_1of3_32x7.png",
+      "trainer/level_progress_2of3_32x7.png",
+      "trainer/level_progress_3of3_32x7.png"
+    ],
+    "screen_layouts_file": "trainer_screen_layouts.json"
+  },
+  "art_sources": {
+    "front": "a_wide_clean_black_background_with_a_single_large.png",
+    "trainer_portrait": "a_comprehensive_monochrome_1_bit_pixel_art_game_as.png"
+  },
+  "limitations": [
+    "The front artwork is a playable prototype set, not a hand-approved final art set.",
+    "Some source illustrations touch crop gutters; review front source_crop_warning_ids at true OLED size.",
+    "The player sprite deliberately mirrors the front art horizontally; no anatomical rear view is supplied or required."
+  ],
+  "source_crop_warning_ids": {
+    "front": [
+      [
+        29,
+        22
+      ],
+      [
+        30,
+        20
+      ],
+      [
+        32,
+        13
+      ],
+      [
+        33,
+        12
+      ],
+      [
+        41,
+        19
+      ],
+      [
+        42,
+        20
+      ],
+      [
+        44,
+        16
+      ],
+      [
+        45,
+        15
+      ],
+      [
+        47,
+        20
+      ],
+      [
+        48,
+        31
+      ],
+      [
+        60,
+        20
+      ]
+    ]
+  },
+  "species": [
+    {
+      "species_id": 1,
+      "family_id": 1,
+      "stage": 1,
+      "name": "Vapkit",
+      "primary": "Ember",
+      "secondary": "Tide",
+      "front": "creatures/01_vapkit_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 2,
+      "family_id": 1,
+      "stage": 2,
+      "name": "Vaprowl",
+      "primary": "Ember",
+      "secondary": "Tide",
+      "front": "creatures/02_vaprowl_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 3,
+      "family_id": 1,
+      "stage": 3,
+      "name": "Thermwyrm",
+      "primary": "Ember",
+      "secondary": "Tide",
+      "front": "creatures/03_thermwyrm_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 4,
+      "family_id": 2,
+      "stage": 1,
+      "name": "Cindseed",
+      "primary": "Ember",
+      "secondary": "Thorn",
+      "front": "creatures/04_cindseed_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 5,
+      "family_id": 2,
+      "stage": 2,
+      "name": "Briarsmoke",
+      "primary": "Ember",
+      "secondary": "Thorn",
+      "front": "creatures/05_briarsmoke_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 6,
+      "family_id": 2,
+      "stage": 3,
+      "name": "Pyrocanopy",
+      "primary": "Ember",
+      "secondary": "Thorn",
+      "front": "creatures/06_pyrocanopy_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 7,
+      "family_id": 3,
+      "stage": 1,
+      "name": "Flintub",
+      "primary": "Ember",
+      "secondary": "Stone",
+      "front": "creatures/07_flintub_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 8,
+      "family_id": 3,
+      "stage": 2,
+      "name": "Kilnscar",
+      "primary": "Ember",
+      "secondary": "Stone",
+      "front": "creatures/08_kilnscar_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 9,
+      "family_id": 3,
+      "stage": 3,
+      "name": "Furnacore",
+      "primary": "Ember",
+      "secondary": "Stone",
+      "front": "creatures/09_furnacore_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 10,
+      "family_id": 4,
+      "stage": 1,
+      "name": "Flickit",
+      "primary": "Ember",
+      "secondary": "Spark",
+      "front": "creatures/10_flickit_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 11,
+      "family_id": 4,
+      "stage": 2,
+      "name": "Arcfang",
+      "primary": "Ember",
+      "secondary": "Spark",
+      "front": "creatures/11_arcfang_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 12,
+      "family_id": 4,
+      "stage": 3,
+      "name": "Voltflare",
+      "primary": "Ember",
+      "secondary": "Spark",
+      "front": "creatures/12_voltflare_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 13,
+      "family_id": 5,
+      "stage": 1,
+      "name": "Brinlet",
+      "primary": "Tide",
+      "secondary": "Ember",
+      "front": "creatures/13_brinlet_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 14,
+      "family_id": 5,
+      "stage": 2,
+      "name": "Scaldusk",
+      "primary": "Tide",
+      "secondary": "Ember",
+      "front": "creatures/14_scaldusk_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 15,
+      "family_id": 5,
+      "stage": 3,
+      "name": "Geyzard",
+      "primary": "Tide",
+      "secondary": "Ember",
+      "front": "creatures/15_geyzard_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 16,
+      "family_id": 6,
+      "stage": 1,
+      "name": "Kelprit",
+      "primary": "Tide",
+      "secondary": "Thorn",
+      "front": "creatures/16_kelprit_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 17,
+      "family_id": 6,
+      "stage": 2,
+      "name": "Reefveil",
+      "primary": "Tide",
+      "secondary": "Thorn",
+      "front": "creatures/17_reefveil_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 18,
+      "family_id": 6,
+      "stage": 3,
+      "name": "Thalorin",
+      "primary": "Tide",
+      "secondary": "Thorn",
+      "front": "creatures/18_thalorin_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 19,
+      "family_id": 7,
+      "stage": 1,
+      "name": "Siltclaw",
+      "primary": "Tide",
+      "secondary": "Stone",
+      "front": "creatures/19_siltclaw_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 20,
+      "family_id": 7,
+      "stage": 2,
+      "name": "Breakshell",
+      "primary": "Tide",
+      "secondary": "Stone",
+      "front": "creatures/20_breakshell_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 21,
+      "family_id": 7,
+      "stage": 3,
+      "name": "Tidebastion",
+      "primary": "Tide",
+      "secondary": "Stone",
+      "front": "creatures/21_tidebastion_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 22,
+      "family_id": 8,
+      "stage": 1,
+      "name": "Pipvolt",
+      "primary": "Tide",
+      "secondary": "Spark",
+      "front": "creatures/22_pipvolt_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 23,
+      "family_id": 8,
+      "stage": 2,
+      "name": "Surgewake",
+      "primary": "Tide",
+      "secondary": "Spark",
+      "front": "creatures/23_surgewake_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 24,
+      "family_id": 8,
+      "stage": 3,
+      "name": "Tempestide",
+      "primary": "Tide",
+      "secondary": "Spark",
+      "front": "creatures/24_tempestide_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 25,
+      "family_id": 9,
+      "stage": 1,
+      "name": "Spriglow",
+      "primary": "Thorn",
+      "secondary": "Ember",
+      "front": "creatures/25_spriglow_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 26,
+      "family_id": 9,
+      "stage": 2,
+      "name": "Briarfox",
+      "primary": "Thorn",
+      "secondary": "Ember",
+      "front": "creatures/26_briarfox_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 27,
+      "family_id": 9,
+      "stage": 3,
+      "name": "Wildpyre",
+      "primary": "Thorn",
+      "secondary": "Ember",
+      "front": "creatures/27_wildpyre_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 28,
+      "family_id": 10,
+      "stage": 1,
+      "name": "Reedpip",
+      "primary": "Thorn",
+      "secondary": "Tide",
+      "front": "creatures/28_reedpip_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 29,
+      "family_id": 10,
+      "stage": 2,
+      "name": "Mirehowl",
+      "primary": "Thorn",
+      "secondary": "Tide",
+      "front": "creatures/29_mirehowl_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 22
+    },
+    {
+      "species_id": 30,
+      "family_id": 10,
+      "stage": 3,
+      "name": "Fenmantle",
+      "primary": "Thorn",
+      "secondary": "Tide",
+      "front": "creatures/30_fenmantle_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 20
+    },
+    {
+      "species_id": 31,
+      "family_id": 11,
+      "stage": 1,
+      "name": "Rootling",
+      "primary": "Thorn",
+      "secondary": "Stone",
+      "front": "creatures/31_rootling_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 32,
+      "family_id": 11,
+      "stage": 2,
+      "name": "Barkhorn",
+      "primary": "Thorn",
+      "secondary": "Stone",
+      "front": "creatures/32_barkhorn_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 13
+    },
+    {
+      "species_id": 33,
+      "family_id": 11,
+      "stage": 3,
+      "name": "Groveantler",
+      "primary": "Thorn",
+      "secondary": "Stone",
+      "front": "creatures/33_groveantler_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 12
+    },
+    {
+      "species_id": 34,
+      "family_id": 12,
+      "stage": 1,
+      "name": "Vinetip",
+      "primary": "Thorn",
+      "secondary": "Spark",
+      "front": "creatures/34_vinetip_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 35,
+      "family_id": 12,
+      "stage": 2,
+      "name": "Vezclaw",
+      "primary": "Thorn",
+      "secondary": "Spark",
+      "front": "creatures/35_vezclaw_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 36,
+      "family_id": 12,
+      "stage": 3,
+      "name": "Stormthicket",
+      "primary": "Thorn",
+      "secondary": "Spark",
+      "front": "creatures/36_stormthicket_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 37,
+      "family_id": 13,
+      "stage": 1,
+      "name": "Ashnub",
+      "primary": "Stone",
+      "secondary": "Ember",
+      "front": "creatures/37_ashnub_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 38,
+      "family_id": 13,
+      "stage": 2,
+      "name": "Moltusk",
+      "primary": "Stone",
+      "secondary": "Ember",
+      "front": "creatures/38_moltusk_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 39,
+      "family_id": 13,
+      "stage": 3,
+      "name": "Basaltrum",
+      "primary": "Stone",
+      "secondary": "Ember",
+      "front": "creatures/39_basaltrum_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 40,
+      "family_id": 14,
+      "stage": 1,
+      "name": "Shellit",
+      "primary": "Stone",
+      "secondary": "Tide",
+      "front": "creatures/40_shellit_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 41,
+      "family_id": 14,
+      "stage": 2,
+      "name": "Reefram",
+      "primary": "Stone",
+      "secondary": "Tide",
+      "front": "creatures/41_reefram_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 19
+    },
+    {
+      "species_id": 42,
+      "family_id": 14,
+      "stage": 3,
+      "name": "Tectavern",
+      "primary": "Stone",
+      "secondary": "Tide",
+      "front": "creatures/42_tectavern_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 20
+    },
+    {
+      "species_id": 43,
+      "family_id": 15,
+      "stage": 1,
+      "name": "Gravseed",
+      "primary": "Stone",
+      "secondary": "Thorn",
+      "front": "creatures/43_gravseed_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 44,
+      "family_id": 15,
+      "stage": 2,
+      "name": "Mossolith",
+      "primary": "Stone",
+      "secondary": "Thorn",
+      "front": "creatures/44_mossolith_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 16
+    },
+    {
+      "species_id": 45,
+      "family_id": 15,
+      "stage": 3,
+      "name": "Verdolith",
+      "primary": "Stone",
+      "secondary": "Thorn",
+      "front": "creatures/45_verdolith_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 15
+    },
+    {
+      "species_id": 46,
+      "family_id": 16,
+      "stage": 1,
+      "name": "Ferrichip",
+      "primary": "Stone",
+      "secondary": "Spark",
+      "front": "creatures/46_ferrichip_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 47,
+      "family_id": 16,
+      "stage": 2,
+      "name": "Ferrogeist",
+      "primary": "Stone",
+      "secondary": "Spark",
+      "front": "creatures/47_ferrogeist_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 20
+    },
+    {
+      "species_id": 48,
+      "family_id": 16,
+      "stage": 3,
+      "name": "Magnetern",
+      "primary": "Stone",
+      "secondary": "Spark",
+      "front": "creatures/48_magnetern_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 31
+    },
+    {
+      "species_id": 49,
+      "family_id": 17,
+      "stage": 1,
+      "name": "Zippup",
+      "primary": "Spark",
+      "secondary": "Ember",
+      "front": "creatures/49_zippup_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 50,
+      "family_id": 17,
+      "stage": 2,
+      "name": "Voltcrest",
+      "primary": "Spark",
+      "secondary": "Ember",
+      "front": "creatures/50_voltcrest_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 51,
+      "family_id": 17,
+      "stage": 3,
+      "name": "Aetheroc",
+      "primary": "Spark",
+      "secondary": "Ember",
+      "front": "creatures/51_aetheroc_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 52,
+      "family_id": 18,
+      "stage": 1,
+      "name": "Luminip",
+      "primary": "Spark",
+      "secondary": "Tide",
+      "front": "creatures/52_luminip_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 53,
+      "family_id": 18,
+      "stage": 2,
+      "name": "Arcshoal",
+      "primary": "Spark",
+      "secondary": "Tide",
+      "front": "creatures/53_arcshoal_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 54,
+      "family_id": 18,
+      "stage": 3,
+      "name": "Stormskate",
+      "primary": "Spark",
+      "secondary": "Tide",
+      "front": "creatures/54_stormskate_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 55,
+      "family_id": 19,
+      "stage": 1,
+      "name": "Blinkbud",
+      "primary": "Spark",
+      "secondary": "Thorn",
+      "front": "creatures/55_blinkbud_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 56,
+      "family_id": 19,
+      "stage": 2,
+      "name": "Staticole",
+      "primary": "Spark",
+      "secondary": "Thorn",
+      "front": "creatures/56_staticole_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 57,
+      "family_id": 19,
+      "stage": 3,
+      "name": "Voltloom",
+      "primary": "Spark",
+      "secondary": "Thorn",
+      "front": "creatures/57_voltloom_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 58,
+      "family_id": 20,
+      "stage": 1,
+      "name": "Coillet",
+      "primary": "Spark",
+      "secondary": "Stone",
+      "front": "creatures/58_coillet_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 59,
+      "family_id": 20,
+      "stage": 2,
+      "name": "Sparkplate",
+      "primary": "Spark",
+      "secondary": "Stone",
+      "front": "creatures/59_sparkplate_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 0
+    },
+    {
+      "species_id": 60,
+      "family_id": 20,
+      "stage": 3,
+      "name": "Dynacarapax",
+      "primary": "Spark",
+      "secondary": "Stone",
+      "front": "creatures/60_dynacarapax_front.png",
+      "size": [
+        32,
+        32
+      ],
+      "format": "1-bit, MSB-first",
+      "front_source_cut_pixels": 20
+    }
+  ],
+  "crop_info": {
+    "front": [
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 0,
+        "crop": [
+          0,
+          0,
+          162,
+          162
+        ],
+        "source_bbox": [
+          30,
+          52,
+          145,
+          155
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          21
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 1,
+        "crop": [
+          162,
+          0,
+          324,
+          162
+        ],
+        "source_bbox": [
+          175,
+          18,
+          307,
+          150
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          27
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 2,
+        "crop": [
+          324,
+          0,
+          486,
+          162
+        ],
+        "source_bbox": [
+          327,
+          4,
+          486,
+          162
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          31
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 3,
+        "crop": [
+          486,
+          0,
+          645,
+          162
+        ],
+        "source_bbox": [
+          512,
+          65,
+          627,
+          157
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          18
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 4,
+        "crop": [
+          645,
+          0,
+          797,
+          162
+        ],
+        "source_bbox": [
+          645,
+          34,
+          785,
+          154
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          23
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 5,
+        "crop": [
+          797,
+          0,
+          971,
+          162
+        ],
+        "source_bbox": [
+          797,
+          2,
+          969,
+          158
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          28
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 6,
+        "crop": [
+          971,
+          0,
+          1133,
+          162
+        ],
+        "source_bbox": [
+          998,
+          53,
+          1093,
+          160
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          20,
+          23
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 7,
+        "crop": [
+          1133,
+          0,
+          1276,
+          162
+        ],
+        "source_bbox": [
+          1133,
+          24,
+          1254,
+          161
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          24,
+          27
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 8,
+        "crop": [
+          1276,
+          0,
+          1456,
+          162
+        ],
+        "source_bbox": [
+          1276,
+          1,
+          1448,
+          161
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          29
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 9,
+        "crop": [
+          1456,
+          0,
+          1618,
+          162
+        ],
+        "source_bbox": [
+          1490,
+          63,
+          1591,
+          160
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          22
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 10,
+        "crop": [
+          1618,
+          0,
+          1780,
+          162
+        ],
+        "source_bbox": [
+          1625,
+          37,
+          1761,
+          161
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          25
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 0,
+        "source_col": 11,
+        "crop": [
+          1780,
+          0,
+          1942,
+          162
+        ],
+        "source_bbox": [
+          1782,
+          4,
+          1933,
+          162
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          30,
+          31
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 0,
+        "crop": [
+          0,
+          162,
+          162,
+          326
+        ],
+        "source_bbox": [
+          26,
+          229,
+          142,
+          323
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          19
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 1,
+        "crop": [
+          162,
+          162,
+          324,
+          326
+        ],
+        "source_bbox": [
+          168,
+          195,
+          307,
+          320
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          24
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 2,
+        "crop": [
+          324,
+          162,
+          487,
+          326
+        ],
+        "source_bbox": [
+          328,
+          180,
+          487,
+          320
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          27
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 3,
+        "crop": [
+          487,
+          162,
+          637,
+          326
+        ],
+        "source_bbox": [
+          512,
+          235,
+          624,
+          326
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          19
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 4,
+        "crop": [
+          637,
+          162,
+          795,
+          326
+        ],
+        "source_bbox": [
+          637,
+          208,
+          791,
+          326
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          21
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 5,
+        "crop": [
+          795,
+          162,
+          971,
+          326
+        ],
+        "source_bbox": [
+          795,
+          185,
+          968,
+          326
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          25
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 6,
+        "crop": [
+          971,
+          162,
+          1127,
+          326
+        ],
+        "source_bbox": [
+          991,
+          227,
+          1103,
+          322
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          20
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 7,
+        "crop": [
+          1127,
+          162,
+          1275,
+          326
+        ],
+        "source_bbox": [
+          1127,
+          195,
+          1255,
+          322
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          27
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 8,
+        "crop": [
+          1275,
+          162,
+          1456,
+          326
+        ],
+        "source_bbox": [
+          1275,
+          172,
+          1449,
+          324
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          27
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 9,
+        "crop": [
+          1456,
+          162,
+          1604,
+          326
+        ],
+        "source_bbox": [
+          1483,
+          235,
+          1580,
+          318
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          20
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 10,
+        "crop": [
+          1604,
+          162,
+          1770,
+          326
+        ],
+        "source_bbox": [
+          1604,
+          187,
+          1758,
+          323
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          24
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 1,
+        "source_col": 11,
+        "crop": [
+          1770,
+          162,
+          1942,
+          326
+        ],
+        "source_bbox": [
+          1770,
+          178,
+          1934,
+          326
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          28
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 0,
+        "crop": [
+          0,
+          326,
+          162,
+          485
+        ],
+        "source_bbox": [
+          25,
+          383,
+          141,
+          477
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          19
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 1,
+        "crop": [
+          162,
+          326,
+          324,
+          485
+        ],
+        "source_bbox": [
+          173,
+          342,
+          320,
+          478
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          25
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 2,
+        "crop": [
+          324,
+          326,
+          486,
+          485
+        ],
+        "source_bbox": [
+          331,
+          331,
+          482,
+          480
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          31
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 3,
+        "crop": [
+          486,
+          326,
+          640,
+          485
+        ],
+        "source_bbox": [
+          514,
+          404,
+          606,
+          477
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          18
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 4,
+        "crop": [
+          640,
+          326,
+          800,
+          485
+        ],
+        "source_bbox": [
+          640,
+          367,
+          800,
+          477
+        ],
+        "source_white_pixels_at_crop_border": 22,
+        "target_size": [
+          27,
+          19
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 5,
+        "crop": [
+          800,
+          326,
+          971,
+          485
+        ],
+        "source_bbox": [
+          800,
+          331,
+          967,
+          478
+        ],
+        "source_white_pixels_at_crop_border": 20,
+        "target_size": [
+          31,
+          27
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 6,
+        "crop": [
+          971,
+          326,
+          1131,
+          485
+        ],
+        "source_bbox": [
+          1003,
+          375,
+          1102,
+          477
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          22,
+          23
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 7,
+        "crop": [
+          1131,
+          326,
+          1280,
+          485
+        ],
+        "source_bbox": [
+          1131,
+          331,
+          1280,
+          477
+        ],
+        "source_white_pixels_at_crop_border": 13,
+        "target_size": [
+          27,
+          26
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 8,
+        "crop": [
+          1280,
+          326,
+          1456,
+          485
+        ],
+        "source_bbox": [
+          1280,
+          331,
+          1440,
+          478
+        ],
+        "source_white_pixels_at_crop_border": 12,
+        "target_size": [
+          31,
+          28
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 9,
+        "crop": [
+          1456,
+          326,
+          1612,
+          485
+        ],
+        "source_bbox": [
+          1482,
+          371,
+          1595,
+          477
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          22
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 10,
+        "crop": [
+          1612,
+          326,
+          1770,
+          485
+        ],
+        "source_bbox": [
+          1612,
+          341,
+          1759,
+          477
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          25
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 2,
+        "source_col": 11,
+        "crop": [
+          1770,
+          326,
+          1942,
+          485
+        ],
+        "source_bbox": [
+          1770,
+          331,
+          1934,
+          477
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          28
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 0,
+        "crop": [
+          0,
+          485,
+          162,
+          639
+        ],
+        "source_bbox": [
+          33,
+          542,
+          134,
+          631
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          20
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 1,
+        "crop": [
+          162,
+          485,
+          321,
+          639
+        ],
+        "source_bbox": [
+          173,
+          516,
+          308,
+          633
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          23
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 2,
+        "crop": [
+          321,
+          485,
+          486,
+          639
+        ],
+        "source_bbox": [
+          321,
+          494,
+          486,
+          633
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          26
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 3,
+        "crop": [
+          486,
+          485,
+          646,
+          639
+        ],
+        "source_bbox": [
+          519,
+          555,
+          622,
+          631
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          17
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 4,
+        "crop": [
+          646,
+          485,
+          787,
+          639
+        ],
+        "source_bbox": [
+          646,
+          512,
+          787,
+          632
+        ],
+        "source_white_pixels_at_crop_border": 19,
+        "target_size": [
+          27,
+          23
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 5,
+        "crop": [
+          787,
+          485,
+          971,
+          639
+        ],
+        "source_bbox": [
+          787,
+          490,
+          968,
+          633
+        ],
+        "source_white_pixels_at_crop_border": 20,
+        "target_size": [
+          31,
+          24
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 6,
+        "crop": [
+          971,
+          485,
+          1133,
+          639
+        ],
+        "source_bbox": [
+          1010,
+          542,
+          1101,
+          630
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          22
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 7,
+        "crop": [
+          1133,
+          485,
+          1279,
+          639
+        ],
+        "source_bbox": [
+          1141,
+          494,
+          1279,
+          629
+        ],
+        "source_white_pixels_at_crop_border": 16,
+        "target_size": [
+          27,
+          26
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 8,
+        "crop": [
+          1279,
+          485,
+          1456,
+          639
+        ],
+        "source_bbox": [
+          1279,
+          485,
+          1456,
+          631
+        ],
+        "source_white_pixels_at_crop_border": 15,
+        "target_size": [
+          31,
+          26
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 9,
+        "crop": [
+          1456,
+          485,
+          1596,
+          639
+        ],
+        "source_bbox": [
+          1493,
+          545,
+          1566,
+          630
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          20,
+          23
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 10,
+        "crop": [
+          1596,
+          485,
+          1758,
+          639
+        ],
+        "source_bbox": [
+          1596,
+          512,
+          1758,
+          629
+        ],
+        "source_white_pixels_at_crop_border": 20,
+        "target_size": [
+          27,
+          20
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 3,
+        "source_col": 11,
+        "crop": [
+          1758,
+          485,
+          1942,
+          639
+        ],
+        "source_bbox": [
+          1758,
+          493,
+          1937,
+          631
+        ],
+        "source_white_pixels_at_crop_border": 31,
+        "target_size": [
+          31,
+          24
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 0,
+        "crop": [
+          0,
+          639,
+          162,
+          809
+        ],
+        "source_bbox": [
+          16,
+          692,
+          131,
+          795
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          21
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 1,
+        "crop": [
+          162,
+          639,
+          315,
+          809
+        ],
+        "source_bbox": [
+          168,
+          666,
+          295,
+          796
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          26,
+          27
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 2,
+        "crop": [
+          315,
+          639,
+          486,
+          809
+        ],
+        "source_bbox": [
+          315,
+          647,
+          484,
+          802
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          28
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 3,
+        "crop": [
+          486,
+          639,
+          639,
+          809
+        ],
+        "source_bbox": [
+          509,
+          710,
+          622,
+          788
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          16
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 4,
+        "crop": [
+          639,
+          639,
+          793,
+          809
+        ],
+        "source_bbox": [
+          639,
+          660,
+          778,
+          796
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          26
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 5,
+        "crop": [
+          793,
+          639,
+          971,
+          809
+        ],
+        "source_bbox": [
+          793,
+          652,
+          967,
+          796
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          26
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 6,
+        "crop": [
+          971,
+          639,
+          1123,
+          809
+        ],
+        "source_bbox": [
+          1004,
+          711,
+          1097,
+          794
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          21
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 7,
+        "crop": [
+          1123,
+          639,
+          1275,
+          809
+        ],
+        "source_bbox": [
+          1123,
+          665,
+          1262,
+          792
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          25
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 8,
+        "crop": [
+          1275,
+          639,
+          1456,
+          809
+        ],
+        "source_bbox": [
+          1275,
+          639,
+          1452,
+          796
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          31,
+          27
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 9,
+        "crop": [
+          1456,
+          639,
+          1603,
+          809
+        ],
+        "source_bbox": [
+          1477,
+          712,
+          1583,
+          793
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          23,
+          18
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 10,
+        "crop": [
+          1603,
+          639,
+          1758,
+          809
+        ],
+        "source_bbox": [
+          1603,
+          680,
+          1739,
+          794
+        ],
+        "source_white_pixels_at_crop_border": 0,
+        "target_size": [
+          27,
+          23
+        ]
+      },
+      {
+        "view": "front",
+        "source_row": 4,
+        "source_col": 11,
+        "crop": [
+          1758,
+          639,
+          1942,
+          809
+        ],
+        "source_bbox": [
+          1758,
+          647,
+          1932,
+          796
+        ],
+        "source_white_pixels_at_crop_border": 20,
+        "target_size": [
+          31,
+          27
+        ]
+      }
+    ]
+  }
+}

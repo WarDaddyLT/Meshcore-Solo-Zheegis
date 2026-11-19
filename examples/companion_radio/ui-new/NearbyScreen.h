@@ -180,7 +180,11 @@ class NearbyScreen : public UIScreen {
     _own_lat = _own_lon = 0;
     _own_gps = _task->currentLocation(_own_lat, _own_lon);
 
-    int nc = the_mesh.getNumContacts();
+#ifdef ZYGIS_CHANNEL_ONLY
+    int nc=MAX_ANON_CONTACTS;const int contact_base=0;
+#else
+    int nc = the_mesh.getNumContacts();const int contact_base=MAX_ANON_CONTACTS;
+#endif
     for (int i = 0; i < nc && _count < MAX_NEARBY; i++) {
       ContactInfo ci;
       // getContactByIdx() indexes the RAW contact table, whose first
@@ -192,8 +196,8 @@ class NearbyScreen : public UIScreen {
       // rows, and silently dropped the same number of real contacts off the
       // end -- while never touching the anon slots themselves, so it always
       // reproduced the same way regardless of the auto-add overwrite setting.
-      if (!the_mesh.getContactByIdx(i + MAX_ANON_CONTACTS, ci)) continue;
-      if (!typeMatchesFilter(ci.type, ci.flags, true)) continue;
+      if (!the_mesh.getContactByIdx(i + contact_base, ci)) continue;
+      if (ci.type==ADV_TYPE_NONE || !typeMatchesFilter(ci.type, ci.flags, true)) continue;
 
       Entry& e = _entries[_count++];
       strncpy(e.name, ci.name, sizeof(e.name) - 1);
@@ -209,7 +213,7 @@ class NearbyScreen : public UIScreen {
                     : -1.0f;
       e.type        = ci.type;
       e.fav         = (ci.flags & 0x01) != 0;
-      e.contact_idx = i + MAX_ANON_CONTACTS;   // raw index -- other lookups re-key off this directly
+      e.contact_idx = i + contact_base;   // raw index -- other lookups re-key off this directly
       e.lastmod     = ci.lastmod;
       e.is_known    = true;
       e.is_live     = false;

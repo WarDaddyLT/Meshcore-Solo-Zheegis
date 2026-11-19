@@ -151,6 +151,13 @@ public:
   // added later at the same slot would silently inherit the old one's bot/
   // share target or notification melody. Default no-op.
   virtual void onChannelRemoved(uint8_t channel_idx) {}
+#ifdef ZYGIS_GAME_DIAGNOSTICS
+  virtual size_t writeGameDiagnostics(uint8_t* output, size_t size) { return 0; }
+#endif
+  virtual void onGameChannelText(uint8_t channel, const char* text, const char* sender) { (void)channel; (void)text; (void)sender; }
+#ifdef ZYGIS_GAME_TEST_API
+  virtual bool gameTestInput(uint8_t mode, char key) { return false; }
+#endif
   // Single choke point for every controlled power-down (low-battery auto-off,
   // long-press power-off, and now every board.reboot() caller too): flush
   // prefs/RTC/contacts/trail before the board actually goes down or restarts,

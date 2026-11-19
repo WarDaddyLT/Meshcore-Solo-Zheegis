@@ -110,9 +110,19 @@ full repeater names; long routes are split into fitting messages.
 while waiting for airtime. Only direct, zero-hop repeater replies with the
 matching request tag are accepted. Repeated replies from the same key prefix
 are deduplicated. Reports include a known contact name (or `unknown`), an 8-byte
-public-key prefix, receive RSSI, and SNR in both directions. The final message
-states how many replies were received. Up to 64 distinct responders are retained;
-if the limit is reached, the summary explicitly reports the omission.
+public-key prefix, reply RSSI in dBm (`RX`), and SNR in dB in both directions.
+`SNR in/out` means repeater → tracker (the reply) and tracker → repeater (the
+request). The discovery reply contains the repeater's SNR for the request,
+so reverse RSSI is unavailable. dBi describes antenna gain.
+
+Compare repeated RX readings from the same transmitter as you rotate a
+directional antenna. Reflections can shift the strongest reading, so treat it
+as an approximate bearing. To take a bearing on a tracker, measure packets
+received directly from that tracker. `!triangulate` reports the repeaters
+heard by the tracker that ran the command.
+
+The final message states how many replies were received. Up to 64 distinct
+responders are retained. If the limit is reached, the summary reports it.
 
 Hidden nodes, nodes suppressing discovery, and lost replies are not observable.
 This command provides direct-neighbor observations, not a calculated triangulated
@@ -128,6 +138,17 @@ or detect every previously name-derived key. Use a newly generated private secre
 Everyone with that secret can send tracker commands. Shared-key messages do not
 authenticate individual senders or discovery responders. A locally queued report
 is not confirmation that every channel member received it.
+
+If every tracking command goes silent, check that both radios still use the same
+private secret. Matching channel names are insufficient: changing the secret and
+rebinding locally can pass `verify` while isolating the tracker from the group.
+Restore or import the intended private channel, select it again under Tracking,
+then test `!kur` and `!power` from another radio. Reflashing the application keeps
+saved channel settings, so it cannot repair a mismatched secret by itself.
+
+Game transmissions yield while tracker replies or other radio transmissions are
+queued. Tracking alerts also suppress game transmissions and game sounds until
+dismissed. Games may continue while GPS waits for a fresh fix.
 
 ## Controls and feedback
 

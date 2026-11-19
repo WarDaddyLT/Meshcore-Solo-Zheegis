@@ -16,6 +16,27 @@ class ToolsScreen : public UIScreen {
     ACT_NEARBY, ACT_LIVESHARE, ACT_TRAIL, ACT_LOCATOR, ACT_COMPASS,
     ACT_BOT, ACT_AUTOADVERT, ACT_REPEATER, ACT_ADMIN,
     ACT_CLOCK, ACT_RINGTONE, ACT_DIAGNOSTICS
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+    , ACT_GAMES, ACT_GAMES_NET
+#ifdef SOLO_GAME_SNAKE
+    , ACT_SNAKE
+#endif
+#ifdef SOLO_GAME_CHECKERS
+    , ACT_CHECKERS
+#endif
+#ifdef SOLO_GAME_BATTLESHIP
+    , ACT_BATTLESHIP
+#endif
+#ifdef SOLO_GAME_ARTILLERY
+    , ACT_ARTILLERY
+#endif
+#ifdef SOLO_GAME_HOLDEM
+    , ACT_HOLDEM
+#endif
+#ifdef SOLO_GAME_VEYLITH
+    , ACT_VEYLITH
+#endif
+#endif
 #if defined(PIN_GPIO1)
     , ACT_GPIO
 #endif
@@ -27,7 +48,12 @@ class ToolsScreen : public UIScreen {
   static const Tool COMMS_TOOLS[];
   static const Tool SYSTEM_TOOLS[];
   static const Section SECTIONS[];
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  static const Tool GAME_TOOLS[];
+  static const int SECTION_COUNT = 4;
+#else
   static const int SECTION_COUNT = 3;
+#endif
 
   AccordionList _acc;
 
@@ -58,6 +84,28 @@ class ToolsScreen : public UIScreen {
       case ACT_AUTOADVERT:  _task->gotoAutoAdvertScreen();  break;
       case ACT_REPEATER:    _task->gotoRepeaterScreen();    break;
       case ACT_ADMIN:       _task->pickAdminTarget();       break;  // Admin is remote-only: pick a node first
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+      case ACT_GAMES:       _task->gotoGamesScreen(NodePrefs::FAV_GAME_TICTACTOE);       break;
+      case ACT_GAMES_NET:   _task->gotoGamesScreen(NodePrefs::FAV_GAME_TICTACTOE_MESH);  break;
+#ifdef SOLO_GAME_SNAKE
+      case ACT_SNAKE:       _task->gotoGamesScreen(NodePrefs::FAV_GAME_SNAKE); break;
+#endif
+#ifdef SOLO_GAME_CHECKERS
+      case ACT_CHECKERS:    _task->gotoGamesScreen(NodePrefs::FAV_GAME_CHECKERS); break;
+#endif
+#ifdef SOLO_GAME_BATTLESHIP
+      case ACT_BATTLESHIP:  _task->gotoGamesScreen(NodePrefs::FAV_GAME_BATTLESHIP); break;
+#endif
+#ifdef SOLO_GAME_ARTILLERY
+      case ACT_ARTILLERY:   _task->gotoGamesScreen(NodePrefs::FAV_GAME_ARTILLERY); break;
+#endif
+#ifdef SOLO_GAME_HOLDEM
+      case ACT_HOLDEM: _task->gotoGamesScreen(NodePrefs::FAV_GAME_HOLDEM); break;
+#endif
+#ifdef SOLO_GAME_VEYLITH
+      case ACT_VEYLITH: _task->gotoGamesScreen(NodePrefs::FAV_GAME_VEYLITH); break;
+#endif
+#endif
       case ACT_CLOCK:       _task->gotoClockTools();        break;
       case ACT_RINGTONE:    _task->gotoRingtoneEditor();    break;
       case ACT_DIAGNOSTICS: _task->gotoDiagnosticsScreen(); break;
@@ -143,8 +191,35 @@ const ToolsScreen::Tool ToolsScreen::SYSTEM_TOOLS[] = {
   { "GPIO",            &ICON_PINS,  ACT_GPIO },
 #endif
 };
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+const ToolsScreen::Tool ToolsScreen::GAME_TOOLS[] = {
+  { "Tic-Tac-Toe", &ICON_GEAR, ACT_GAMES },
+  { "TTT multiplayer", &ICON_GEAR, ACT_GAMES_NET },
+#ifdef SOLO_GAME_SNAKE
+  { "Snake", &ICON_GEAR, ACT_SNAKE },
+#endif
+#ifdef SOLO_GAME_CHECKERS
+  { "Checkers", &ICON_GEAR, ACT_CHECKERS },
+#endif
+#ifdef SOLO_GAME_BATTLESHIP
+  { "Battleship", &ICON_GEAR, ACT_BATTLESHIP },
+#endif
+#ifdef SOLO_GAME_ARTILLERY
+  { "Scorched Earth", &ICON_GEAR, ACT_ARTILLERY },
+#endif
+#ifdef SOLO_GAME_HOLDEM
+  { "Texas Hold'em", &ICON_GEAR, ACT_HOLDEM },
+#endif
+#ifdef SOLO_GAME_VEYLITH
+  { "Veylith Arena", &ICON_GEAR, ACT_VEYLITH },
+#endif
+};
+#endif
 const ToolsScreen::Section ToolsScreen::SECTIONS[] = {
   { "Location", &ICON_MAP_CONTACT, LOCATION_TOOLS, 5 },
   { "Comms",    &ICON_ADVERT,      COMMS_TOOLS,    4 },
   { "System",   &ICON_GEAR,        SYSTEM_TOOLS,   (uint8_t)(sizeof(SYSTEM_TOOLS)/sizeof(SYSTEM_TOOLS[0])) },
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  { "Games", &ICON_GEAR, GAME_TOOLS, (uint8_t)(sizeof(GAME_TOOLS)/sizeof(GAME_TOOLS[0])) },
+#endif
 };

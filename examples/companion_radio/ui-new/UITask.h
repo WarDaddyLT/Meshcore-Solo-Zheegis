@@ -104,6 +104,9 @@ class UITask : public AbstractUITask {
   UIScreen* settings = nullptr;
   UIScreen* messages_screen = nullptr;
   UIScreen* tools_screen = nullptr;
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  UIScreen* games_screen = nullptr;
+#endif
   UIScreen* ringtone_edit = nullptr;
   UIScreen* bot_screen = nullptr;
   UIScreen* admin_screen = nullptr;
@@ -292,7 +295,12 @@ private:
 #endif
   void pollHallSensor();
 
-  void setCurrScreen(UIScreen* c);
+  bool ensureScreen(UIScreen*& screen);
+  bool setCurrScreen(UIScreen*& screen);
+#ifdef SOLO_UI_ON_DEMAND
+  bool _companion_mode = false;
+  void collectInactiveScreens();
+#endif
 
   // Mirror _locked into HomeScreen's LOCK page so the lock screen renders via
   // the normal home render() path (top-right status bar included) instead of a
@@ -341,6 +349,26 @@ public:
   void pickBotChannelTarget();             // open Messages to choose the auto-reply bot's channel
   void pickBotRoomTarget();                // open Messages to choose the auto-reply bot's room
   void gotoToolsScreen();
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  void gotoGamesScreen(uint8_t game_id = 0);
+  void playGameSound(bool result);
+#ifdef SOLO_GAME_VEYLITH
+  int loadVeylith(uint8_t* bytes,size_t size);
+  bool saveVeylith(const uint8_t* bytes,size_t size);
+  bool backupVeylith();
+#endif
+#ifdef ZYGIS_GAME_DIAGNOSTICS
+  size_t writeGameDiagnostics(uint8_t* output, size_t size) override;
+#endif
+  void onGameChannelText(uint8_t channel, const char* text, const char* sender) override;
+  bool gameChannel(uint8_t slot, char* name, size_t size, uint8_t digest[16]);
+  uint32_t gamePlayerId() const;
+  uint64_t gameSessionId() const;
+  bool sendGameText(uint8_t slot, const char* text, const uint8_t digest[16]);
+#ifdef ZYGIS_GAME_TEST_API
+  bool gameTestInput(uint8_t mode, char key) override;
+#endif
+#endif
   void gotoRingtoneEditor(int slot = 0);
   void gotoBotScreen();
   void pickAdminTarget();                  // Admin is remote-only: open Nodes to pick a repeater/room
@@ -517,10 +545,15 @@ public:
     }
     return -1;
   }
+  static const char* favouriteGameLabel(uint8_t game_id);
+  void favouriteLabel(int slot, char* output, size_t size) const;
+  bool setFavouriteGameSlot(int slot, uint8_t game_id);
+  bool openFavouriteGame(uint8_t game_id);
   bool isFavouriteSlotEmpty(int slot) const {
     if (!_node_prefs || slot < 0 || slot >= NodePrefs::FAVOURITES_COUNT) return true;
     // A channel slot is never empty: channel 0's prefix is all zeroes.
-    if (_node_prefs->favourite_kinds[slot] == NodePrefs::FAV_KIND_CHANNEL) return false;
+    if (_node_prefs->favourite_kinds[slot] == NodePrefs::FAV_KIND_CHANNEL ||
+        _node_prefs->favourite_kinds[slot] == NodePrefs::FAV_KIND_GAME) return false;
     for (uint8_t b = 0; b < NodePrefs::FAVOURITE_PREFIX_LEN; b++)
       if (_node_prefs->favourite_contacts[slot][b]) return false;
     return true;

@@ -16,6 +16,14 @@ atidaryti telefone gali reikėti interneto.
 
 ## Kuo papildytas „Solo“?
 
+Pasirenkamos šeimos žaidimų konfigūracijos turi šešis vietinius žaidimus ir
+„Tic-Tac-Toe“ per privatų kanalą. Atskira [„Veylith Arena“ CPU peržiūra](docs/veylith-arena.md)
+prideda trijų būtybių komandą, rankinį XP skyrimą savybėms, evoliucijas ir kovas
+su kompiuteriu, naudojant prototipinius piešinius. Kiekviena būtybė turi keturias
+gebėjimų vietas; platesnis pasirinkimas priklauso nuo lygio, elementų ir nuolat
+išugdytų savybių. Valdymas ir įrenginių ribos
+aprašyti [žaidimų gide](docs/games.md). „Arena“ PvP dar neįgyvendintas.
+
 - **Privačios vietos ataskaitos:** koordinatės, žemėlapio nuoroda ir apytikris
   baterijos įkrovos procentas siunčiami į pasirinktą privatų kanalą.
 - **GPS valdymas:** gavęs naują vietos nustatymą ir parengęs ataskaitą, GPS
@@ -82,7 +90,20 @@ periodines užklausas; `!power down` sustabdo ir vykstantį GPS vietos nustatym�
 Konfigūravimo būdas priklauso nuo pasirinktos aplinkos. Veikimas su fiziniais
 įrenginiais dar turi būti patikrintas.
 
+[Šeimos sekiklio profilis](docs/family-profile.md) išlaiko GPS maršrutus, sekimą
+ir žaidimus, bet atsisako bendros kontaktų knygos ir pokalbių istorijos. L1 Pro
+aplinka: `WioTrackerL1_zygis_family`; pradžios ekrane išmatuota apie 141 KiB
+laisvos RAM.
+
 ## Dabartinė būsena
+
+Pasirenkama [žaidimų bandomoji versija](docs/games.md) L1 OLED aplinkoje prideda
+šešis vieno žaidėjo žaidimus: „Kryžiukus ir nuliukus“, „Snake“, šaškes,
+„Battleship“, „Scorched Earth“ ir „Texas Hold’em“. Taip pat yra tinkliniai
+„Kryžiukai ir nuliukai“, spartusis paleidimas ir atminties atlaisvinimas uždarius
+ekraną. Žaidimą tarp dviejų fizinių
+radijo įrenginių dar reikia patikrinti. `WioTrackerL1_zygis_games_production`
+aplinka skirta versijai be USB derinimo priemonių.
 
 Tai **bendruomenei skirta bandomoji versija**. Automatiniai programinės įrangos
 testai ir vietiniai programinės įrangos kompiliavimai atlikti, tačiau veikimas su

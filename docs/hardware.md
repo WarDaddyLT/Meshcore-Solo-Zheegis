@@ -11,6 +11,7 @@ scope. See the [tracking guide](tracking.md) for shared behavior and the
 | --- | --- | --- |
 | LilyGO T-Echo Lite + KeyShield | `LilyGo_T-Echo-Lite_keyshield_zygis` | ES8311 speaker, existing TCA8418 keypad driver, status LEDs |
 | ThinkNode M5 | `ThinkNode_M5_zygis` | Built-in buzzer and board-specific GPS power controls |
+| Seeed Wio Tracker L1 / L1 Pro (OLED) | `WioTrackerL1_zygis` | Solo OLED display/joystick, onboard GPS and buzzer, dual BLE/USB |
 | Seeed Wio Tracker L1 e-ink | `WioTrackerL1Eink_zygis` | Solo e-ink display/joystick, onboard GPS and buzzer, dual BLE/USB |
 
 These environments have successful build checks. Physical GPS, controls, sound,
@@ -53,6 +54,19 @@ pio run -e ThinkNode_M5_zygis
 Append `-t upload --upload-port YOUR_PORT` only after identifying the correct
 port and reviewing the board's flashing/storage requirements. Port names depend
 on the connected device and operating system.
+
+## Wio Tracker L1 / L1 Pro OLED notes
+
+`WioTrackerL1_zygis` extends Solo's OLED dual-interface target and enables the
+shared tracking implementation, including Settings → Tracking. It retains the
+existing OLED, joystick, GPS and buzzer drivers. Build with
+`pio run -e WioTrackerL1_zygis`. A UF2 image is generated under
+`.pio/build/WioTrackerL1_zygis/`; double-press RST to expose the bootloader drive
+if automatic USB DFU entry is unavailable.
+
+The optional `WioTrackerL1_zygis_games` target adds CPU/multiplayer Tic-Tac-Toe
+and on-demand UI allocation. See [Games](games.md) for controls, private-channel
+configuration, quick launch and the current physical-test limits.
 
 ## Wio Tracker L1 e-ink notes
 

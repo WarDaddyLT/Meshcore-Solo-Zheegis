@@ -832,6 +832,8 @@ public:
   }
 
 
+  ~SettingsScreen() { _task->savePrefsIfDirty(_dirty); }
+
   void onShow() override {
     _dirty = false;
 #ifdef PRIVATE_STATUS_REPORTER
@@ -1311,6 +1313,7 @@ public:
       p->display_rotation = (p->display_rotation + (left ? 3 : 1)) & 3;
       _task->applyRotation();
       _dirty = true;
+      _task->savePrefsIfDirty(_dirty);
       return true;
     }
 #endif
@@ -1318,6 +1321,7 @@ public:
     if (_selected == JOY_ROTATION && p && (left || right || enter)) {
       p->joystick_rotation = (p->joystick_rotation + (left ? 3 : 1)) & 3;
       _dirty = true;
+      _task->savePrefsIfDirty(_dirty);
       return true;
     }
 #endif

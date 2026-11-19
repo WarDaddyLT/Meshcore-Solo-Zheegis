@@ -39,6 +39,12 @@ validation is still pending. See the [roadmap](ROADMAP.md) and [changelog](CHANG
 
 ## What you can do
 
+The optional family game builds include six offline games and private-channel
+Tic-Tac-Toe. A separate [Veylith Arena CPU preview](docs/veylith-arena.md) adds
+a three-creature Trainer, manual XP training, evolutions and CPU battles using
+the supplied prototype art. Each creature equips four moves from a larger pool
+unlocked by level, elements and permanent trained stats. See [Games](docs/games.md) for controls and targets.
+
 ### Navigate and communicate
 
 The Solo foundation provides an on-device messaging interface, saved waypoints,
@@ -148,7 +154,19 @@ Everyone with the channel secret can send tracker commands. Shared-key channel
 messages do not authenticate individual senders. Reports are queued locally;
 queueing does not guarantee receipt by every member of the group.
 
+The [family tracker profile](docs/family-profile.md) keeps GPS trails, tracking
+and games while removing the general address book and chat backlog. On an L1
+Pro, build `WioTrackerL1_zygis_family`; measured home free RAM is about 141 KiB.
+
 ## Development and documentation
+
+An optional [Games preview](docs/games.md) adds six single-player games:
+Tic-Tac-Toe, Snake, Checkers, Battleship, Scorched Earth and Texas Hold’em.
+It includes multiplayer Tic-Tac-Toe, quick-launch shortcuts and on-demand
+screen memory on the L1 OLED target.
+Build `WioTrackerL1_zygis_games_production` for a release image without USB
+debugging tools. Multiplayer still needs a match between two physical radios
+for validation.
 
 ```sh
 pio test -e native -e native_kiss_modem -vv

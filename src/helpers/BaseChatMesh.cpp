@@ -131,6 +131,19 @@ void BaseChatMesh::onAdvertRecv(mesh::Packet* packet, const mesh::Identity& id, 
     return;
   }
 
+#ifdef ZYGIS_CHANNEL_ONLY
+  // Only the directly heard repeater cache is useful to this channel-only
+  // tracker. It lives in the eight transient slots; never enters /contacts3.
+  if(parser.getType()!=ADV_TYPE_REPEATER || packet->getPathHashCount()!=0)return;
+  unsigned slot=0;
+  for(unsigned i=0;i<MAX_ANON_CONTACTS;++i) {
+    if(contacts[i].type==ADV_TYPE_NONE || contacts[i].id.matches(id)){slot=i;break;}
+    if(contacts[i].lastmod<contacts[slot].lastmod)slot=i;
+  }
+  populateContactFromAdvert(contacts[slot],id,parser,timestamp);
+  contacts[slot].lastmod=getRTCClock()->getCurrentTime();
+  return;
+#else
   ContactInfo* from = NULL;
   for (int i = 0; i < num_contacts; i++) {
     if (id.matches(contacts[i].id)) {  // is from one of our contacts
@@ -207,6 +220,7 @@ void BaseChatMesh::onAdvertRecv(mesh::Packet* packet, const mesh::Identity& id, 
 
   onDiscoveredContact(*from, is_new, packet->path_len, packet->path);       // let UI know
   onDiscoveredAdvert(packet->isRouteFlood());
+#endif
 }
 
 int BaseChatMesh::searchPeersByHash(const uint8_t* hash) {
@@ -451,6 +465,9 @@ mesh::Packet* BaseChatMesh::composeMsgPacket(const ContactInfo& recipient, uint3
 }
 
 int  BaseChatMesh::sendMessage(const ContactInfo& recipient, uint32_t timestamp, uint8_t attempt, const char* text, uint32_t& expected_ack, uint32_t& est_timeout) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  (void)recipient;(void)timestamp;(void)attempt;(void)text;(void)expected_ack;(void)est_timeout;return MSG_SEND_FAILED;
+#else
   mesh::Packet* pkt = composeMsgPacket(recipient, timestamp, attempt, text, expected_ack);
   if (pkt == NULL) return MSG_SEND_FAILED;
 
@@ -467,6 +484,7 @@ int  BaseChatMesh::sendMessage(const ContactInfo& recipient, uint32_t timestamp,
     rc = MSG_SEND_SENT_DIRECT;
   }
   return rc;
+#endif
 }
 
 int  BaseChatMesh::sendCommandData(const ContactInfo& recipient, uint32_t timestamp, uint8_t attempt, const char* text, uint32_t& est_timeout) {
@@ -815,6 +833,7 @@ void BaseChatMesh::resetPathTo(ContactInfo& recipient) {
   recipient.out_path_len = OUT_PATH_UNKNOWN;
 }
 
+#ifndef ZYGIS_CHANNEL_ONLY
 static ContactInfo* table;  // pass via global :-(
 
 static int cmp_adv_timestamp(const void *a, const void *b) {
@@ -825,7 +844,12 @@ static int cmp_adv_timestamp(const void *a, const void *b) {
   return 0;
 }
 
+#endif
+
 void BaseChatMesh::scanRecentContacts(int last_n, ContactVisitor* visitor) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  (void)last_n;(void)visitor; // No ordinary contact sync or sorting storage.
+#else
   for (int i = 0; i < num_contacts; i++) {  // sort the INDEXES into contacts[]
     sort_array[i] = i;
   }
@@ -840,6 +864,7 @@ void BaseChatMesh::scanRecentContacts(int last_n, ContactVisitor* visitor) {
   for (int i = 0; i < last_n; i++) {
     visitor->onContactVisit(contacts[sort_array[i]]);
   }
+#endif
 }
 
 ContactInfo* BaseChatMesh::searchContactsByPrefix(const char* name_prefix) {
@@ -860,6 +885,9 @@ ContactInfo* BaseChatMesh::lookupContactByPubKey(const uint8_t* pub_key, int pre
 }
 
 bool BaseChatMesh::addContact(const ContactInfo& contact) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  (void)contact;return false;
+#else
   ContactInfo* dest = allocateContactSlot(contact.type == ADV_TYPE_NONE);
   if (dest) {
     *dest = contact;
@@ -867,9 +895,13 @@ bool BaseChatMesh::addContact(const ContactInfo& contact) {
     return true;  // success
   }
   return false;
+#endif
 }
 
 bool BaseChatMesh::removeContact(ContactInfo& contact) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  (void)contact;return false;
+#else
   int idx = 0;
   while (idx < num_contacts && !contacts[idx].id.matches(contact.id)) {
     idx++;
@@ -883,6 +915,7 @@ bool BaseChatMesh::removeContact(ContactInfo& contact) {
     idx++;
   }
   return true;  // Success
+#endif
 }
 
 #ifdef MAX_GROUP_CHANNELS

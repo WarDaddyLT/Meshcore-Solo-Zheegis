@@ -1,0 +1,31 @@
+{
+  "target": "Wio Tracker L1 / L1 Pro OLED",
+  "profile": "WioTrackerL1_zygis_veylith",
+  "source_state": "Uncommitted working-tree snapshot, not a tagged release",
+  "static_ram_bytes": 63280,
+  "application_flash_bytes": 556092,
+  "application_flash_capacity_bytes": 708608,
+  "art_flash_bytes": 10280,
+  "creature_art_flash_bytes": 7680,
+  "separate_rear_art_bytes": 0,
+  "four_equipped_moves_per_creature": true,
+  "move_requirements": [
+    "matching element",
+    "minimum level",
+    "permanent trained stats"
+  ],
+  "move_descriptions": 80,
+  "form_descriptions": 60,
+  "gameplay": "offline CPU; Arena PvP/spectators pending",
+  "home_free_heap_bytes": 144188,
+  "battle_free_heap_bytes": 142380,
+  "minimum_observed_stack_bytes": 1348,
+  "maximum_observed_cpu_choice_us": 238,
+  "timing_clock": "nRF52840 DWT CYCCNT, not quantized micros()",
+  "debug_apis": false,
+  "usb_screenshots": false,
+  "memory_probes": false,
+  "firmware_checksum_verification": false,
+  "art_status": "Front-only v2.1 prototype art; manual final-art approval pending",
+  "built_utc": "2026-11-15T08:32:45.589401+00:00"
+}

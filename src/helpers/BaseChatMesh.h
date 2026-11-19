@@ -63,7 +63,9 @@ class BaseChatMesh : public mesh::Mesh {
 
   ContactInfo contacts[MAX_CONTACTS+MAX_ANON_CONTACTS];
   int num_contacts;
+#ifndef ZYGIS_CHANNEL_ONLY
   int sort_array[MAX_CONTACTS+MAX_ANON_CONTACTS];
+#endif
   int matching_peer_indexes[MAX_SEARCH_RESULTS];
   unsigned long txt_send_timeout;
 #ifdef MAX_GROUP_CHANNELS

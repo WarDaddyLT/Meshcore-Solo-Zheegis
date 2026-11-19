@@ -2,6 +2,7 @@
 #include "UITask.h"
 #include "CalendarView.h"
 #include "SoundNotifier.h"
+#include <new>
 #include <helpers/TxtDataHelpers.h>
 #include "../MyMesh.h"
 #include "../MsgExpand.h"
@@ -162,8 +163,12 @@ static const int QUICK_MSGS_MAX = 10;
 #include "FullscreenMsgView.h"
 #include "SensorPlaceholders.h"
 #include "SettingsScreen.h"
+#ifdef ZYGIS_CHANNEL_ONLY
+#include "FamilyChannelsScreen.h"
+#else
 #include "MessageHistory.h"   // RAM history rings (DM + channel) used by MessagesScreen
 #include "MessagesScreen.h"
+#endif
 
 // ── Custom screens (separate files to ease upstream merges) ───────────────────
 #include "RingtoneEditorScreen.h"
@@ -180,6 +185,9 @@ static const int QUICK_MSGS_MAX = 10;
 #include "RepeaterScreen.h"
 #if defined(PIN_GPIO1)
 #include "GpioScreen.h"
+#endif
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+#include "GamesScreen.h"
 #endif
 #include "ToolsScreen.h"
 #include "ClockToolsScreen.h"   // Alarm / Timer / Stopwatch (Clock page › Enter)
@@ -1276,7 +1284,11 @@ public:
     } else if (_page == HomePage::QUICK_MSG) {
       display.setColor(DisplayDriver::LIGHT);
       display.setTextSize(1);
+#ifdef ZYGIS_CHANNEL_ONLY
+      display.drawTextCentered(display.width() / 2, content_y, "Channels");
+#else
       display.drawTextCentered(display.width() / 2, content_y, "Messages");
+#endif
       int total_unread = _task->getDMUnreadTotal() + _task->getChannelUnreadCount() + _task->getRoomUnreadCount();
       if (total_unread > 0) {
         char badge[20];
@@ -1317,7 +1329,11 @@ public:
         uint8_t unread   = 0;
         bool    resolved = false;
 
-        if (prefix && _task->favouriteSlotKind(i) == NodePrefs::FAV_KIND_CHANNEL) {
+        if (prefix && _task->favouriteSlotKind(i) == NodePrefs::FAV_KIND_GAME) {
+          const char* label = _task->favouriteGameLabel(prefix[0]);
+          display.translateUTF8ToBlocks(name, label ? label : "Game unavailable", sizeof(name));
+          resolved = true; // preserve pins on builds without this game
+        } else if (prefix && _task->favouriteSlotKind(i) == NodePrefs::FAV_KIND_CHANNEL) {
           uint8_t ch_idx = prefix[0];
           ChannelDetails ch;
           if (the_mesh.getChannel(ch_idx, ch) && ch.name[0]) {
@@ -1329,6 +1345,9 @@ public:
             resolved = true;
           }
         } else if (prefix) {
+#ifdef ZYGIS_CHANNEL_ONLY
+          snprintf(name,sizeof(name),"Solo contact");resolved=true;
+#else
           for (int idx = 0; ; idx++) {
             ContactInfo c;
             if (!the_mesh.getContactByIdx(idx, c)) break;
@@ -1339,6 +1358,7 @@ public:
               break;
             }
           }
+#endif
         }
 
         if (prefix && !resolved) {
@@ -1462,10 +1482,16 @@ public:
         // Filled slot → open its conversation, empty slot → in-place pin picker.
         const uint8_t* pfx = favSlotPrefix(_fav_sel);
         if (!pfx) { _task->pickFavouriteTarget(_fav_sel); return true; }
+        if (_task->favouriteSlotKind(_fav_sel) == NodePrefs::FAV_KIND_GAME) {
+          _task->openFavouriteGame(pfx[0]); return true;
+        }
         if (_task->favouriteSlotKind(_fav_sel) == NodePrefs::FAV_KIND_CHANNEL) {
           _task->openChannelHistory(pfx[0]);
           return true;
         }
+#ifdef ZYGIS_CHANNEL_ONLY
+        _task->showAlert("Contact pin needs Solo",1400);return true;
+#endif
         for (int idx = 0; ; idx++) {
           ContactInfo c2;
           if (!the_mesh.getContactByIdx(idx, c2)) break;
@@ -1661,9 +1687,13 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
   splash = new SplashScreen(this);
   home = new HomeScreen(this, &rtc_clock, sensors, node_prefs);
   syncLockToHome();   // booted locked (e.g. cover closed) → home starts on the LOCK page
+#ifndef SOLO_UI_ON_DEMAND
   settings = new SettingsScreen(this, &_kb);
   messages_screen = new MessagesScreen(this, &_kb);
   tools_screen  = new ToolsScreen(this);
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  games_screen = new GamesScreen(this);
+#endif
   ringtone_edit = new RingtoneEditorScreen(this, node_prefs);
   bot_screen    = new BotScreen(this, node_prefs, &_kb);
   admin_screen  = new AdminScreen(this);
@@ -1680,6 +1710,7 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
 #if defined(PIN_GPIO1)
   gpio_screen        = new GpioScreen(this, node_prefs);
 #endif
+#endif
   applyBrightness();
   applyRotation();
   applyFullRefreshInterval();
@@ -1687,19 +1718,247 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
   setCurrScreen(splash);
 }
 
+bool UITask::ensureScreen(UIScreen*& screen) {
+  if (screen) return true;
+#ifdef SOLO_UI_ON_DEMAND
+  if (&screen == &settings) screen = new (std::nothrow) SettingsScreen(this, &_kb);
+  if (&screen == &messages_screen) screen = new (std::nothrow) MessagesScreen(this, &_kb);
+  if (&screen == &tools_screen) screen = new (std::nothrow) ToolsScreen(this);
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  if (&screen == &games_screen) screen = new (std::nothrow) GamesScreen(this);
+#endif
+  if (&screen == &ringtone_edit) screen = new (std::nothrow) RingtoneEditorScreen(this, _node_prefs);
+  if (&screen == &bot_screen) screen = new (std::nothrow) BotScreen(this, _node_prefs, &_kb);
+  if (&screen == &admin_screen) screen = new (std::nothrow) AdminScreen(this);
+  if (&screen == &nearby_screen) screen = new (std::nothrow) NearbyScreen(this);
+  if (&screen == &dashboard_config) screen = new (std::nothrow) DashboardConfigScreen(this, _node_prefs);
+  if (&screen == &auto_advert_screen) screen = new (std::nothrow) AutoAdvertScreen(this, _node_prefs);
+  if (&screen == &live_share_screen) screen = new (std::nothrow) LiveShareScreen(this, _node_prefs);
+  if (&screen == &locator_screen) screen = new (std::nothrow) LocatorScreen(this, _node_prefs);
+  if (&screen == &trail_screen) screen = new (std::nothrow) TrailScreen(this, &_trail);
+  if (&screen == &compass_screen) screen = new (std::nothrow) CompassScreen(this);
+  if (&screen == &diag_screen) screen = new (std::nothrow) DiagnosticsScreen(this);
+  if (&screen == &repeater_screen) screen = new (std::nothrow) RepeaterScreen(this);
+  if (&screen == &clock_tools) screen = new (std::nothrow) ClockToolsScreen(this, _node_prefs);
+#if defined(PIN_GPIO1)
+  if (&screen == &gpio_screen) screen = new (std::nothrow) GpioScreen(this, _node_prefs);
+#endif
+#endif
+  if (!screen) showAlert("Not enough RAM", 1500);
+  return screen != nullptr;
+}
+
+#ifdef SOLO_UI_ON_DEMAND
+void UITask::collectInactiveScreens() {
+  // Run at the next loop boundary: the old screen's input/render callback
+  // has returned before its storage is destroyed.
+  bool connected = isBLEConnected();
+  if (connected && !_companion_mode) {
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+    if (games_screen && curr == games_screen) gotoHomeScreen();
+#endif
+  }
+  _companion_mode = connected;
+  if (settings && curr != settings) {
+    delete static_cast<SettingsScreen*>(settings);
+    settings = nullptr;
+  }
+  if (messages_screen && curr != messages_screen) {
+    delete static_cast<MessagesScreen*>(messages_screen);
+    messages_screen = nullptr;
+    _room_unread = 0;
+    memset(_dm_unread_table, 0, sizeof(_dm_unread_table));
+  }
+  if (tools_screen && curr != tools_screen) {
+    delete static_cast<ToolsScreen*>(tools_screen);
+    tools_screen = nullptr;
+  }
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  if (games_screen && curr != games_screen) {
+    delete static_cast<GamesScreen*>(games_screen);
+    games_screen = nullptr;
+  }
+#endif
+  if (ringtone_edit && curr != ringtone_edit) {
+    delete static_cast<RingtoneEditorScreen*>(ringtone_edit);
+    ringtone_edit = nullptr;
+  }
+  if (bot_screen && curr != bot_screen) {
+    delete static_cast<BotScreen*>(bot_screen);
+    bot_screen = nullptr;
+  }
+  if (admin_screen && curr != admin_screen) {
+    delete static_cast<AdminScreen*>(admin_screen);
+    admin_screen = nullptr;
+  }
+  if (nearby_screen && curr != nearby_screen) {
+    delete static_cast<NearbyScreen*>(nearby_screen);
+    nearby_screen = nullptr;
+  }
+  if (dashboard_config && curr != dashboard_config) {
+    delete static_cast<DashboardConfigScreen*>(dashboard_config);
+    dashboard_config = nullptr;
+  }
+  if (auto_advert_screen && curr != auto_advert_screen) {
+    delete static_cast<AutoAdvertScreen*>(auto_advert_screen);
+    auto_advert_screen = nullptr;
+  }
+  if (live_share_screen && curr != live_share_screen) {
+    delete static_cast<LiveShareScreen*>(live_share_screen);
+    live_share_screen = nullptr;
+  }
+  if (locator_screen && curr != locator_screen) {
+    delete static_cast<LocatorScreen*>(locator_screen);
+    locator_screen = nullptr;
+  }
+  if (trail_screen && curr != trail_screen) {
+    delete static_cast<TrailScreen*>(trail_screen);
+    trail_screen = nullptr;
+  }
+  if (compass_screen && curr != compass_screen) {
+    delete static_cast<CompassScreen*>(compass_screen);
+    compass_screen = nullptr;
+  }
+  if (diag_screen && curr != diag_screen) {
+    delete static_cast<DiagnosticsScreen*>(diag_screen);
+    diag_screen = nullptr;
+  }
+  if (repeater_screen && curr != repeater_screen) {
+    delete static_cast<RepeaterScreen*>(repeater_screen);
+    repeater_screen = nullptr;
+  }
+#if defined(PIN_GPIO1)
+  if (gpio_screen && curr != gpio_screen) {
+    delete static_cast<GpioScreen*>(gpio_screen);
+    gpio_screen = nullptr;
+  }
+#endif
+  if (clock_tools && curr != clock_tools) { delete static_cast<ClockToolsScreen*>(clock_tools); clock_tools = nullptr; }
+  if (splash && curr != splash) { delete static_cast<SplashScreen*>(splash); splash = nullptr; }
+}
+#endif
+
 // onShow() is invoked by setCurrScreen(), so most navigators are just that.
 void UITask::gotoSettingsScreen()  { setCurrScreen(settings); }
 void UITask::gotoToolsScreen()     { setCurrScreen(tools_screen); }
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+void UITask::gotoGamesScreen(uint8_t game_id) {
+#ifdef SOLO_UI_ON_DEMAND
+  if (isBLEConnected()) { showAlert("Disconnect BLE first", 1500); return; }
+#endif
+  if (!setCurrScreen(games_screen)) return;
+  if (games_screen && game_id == NodePrefs::FAV_GAME_TICTACTOE) ((GamesScreen*)games_screen)->openTicTacToe();
+  if (games_screen && game_id == NodePrefs::FAV_GAME_TICTACTOE_MESH) ((GamesScreen*)games_screen)->openMultiplayer();
+#ifdef SOLO_GAME_SNAKE
+  if (games_screen && game_id == NodePrefs::FAV_GAME_SNAKE) ((GamesScreen*)games_screen)->openSnake();
+#endif
+#ifdef SOLO_GAME_CHECKERS
+  if (games_screen && game_id == NodePrefs::FAV_GAME_CHECKERS) ((GamesScreen*)games_screen)->openCheckers();
+#endif
+#ifdef SOLO_GAME_BATTLESHIP
+  if (games_screen && game_id == NodePrefs::FAV_GAME_BATTLESHIP) ((GamesScreen*)games_screen)->openBattleship();
+#endif
+#ifdef SOLO_GAME_ARTILLERY
+  if (games_screen && game_id == NodePrefs::FAV_GAME_ARTILLERY) ((GamesScreen*)games_screen)->openArtillery();
+#endif
+#ifdef SOLO_GAME_HOLDEM
+  if (games_screen && game_id == NodePrefs::FAV_GAME_HOLDEM) ((GamesScreen*)games_screen)->openHoldem();
+#endif
+#ifdef SOLO_GAME_VEYLITH
+  if (games_screen && game_id == NodePrefs::FAV_GAME_VEYLITH) ((GamesScreen*)games_screen)->openVeylith();
+#endif
+}
+bool UITask::gameChannel(uint8_t slot, char* name, size_t size, uint8_t digest[16]) {
+  ChannelDetails channel;
+  if (!the_mesh.getGameChannel(slot, channel, digest)) return false;
+  if (size) DisplayDriver::translateUTF8Static(name, channel.name, size);
+  return true;
+}
+uint32_t UITask::gamePlayerId() const {
+  uint32_t id = 0;
+  memcpy(&id, the_mesh.self_id.pub_key, sizeof(id));
+  return id ? id : 1;
+}
+uint64_t UITask::gameSessionId() const {
+  uint64_t id = 0;
+  the_mesh.getRNG()->random((uint8_t*)&id, sizeof(id));
+  return id ? id : 1;
+}
+bool UITask::sendGameText(uint8_t slot, const char* text, const uint8_t digest[16]) {
+#ifdef PRIVATE_STATUS_REPORTER
+  if (tracker_alert_active) return false;
+#endif
+  if (!the_mesh.canSendGameMessage()) return false;
+  ChannelDetails channel; uint8_t current[16];
+  if (!the_mesh.getGameChannel(slot, channel, current) || memcmp(current, digest, 16)) return false;
+  size_t length = strlen(text);
+  if (length != 52 || length + strlen(the_mesh.getNodeName()) + 2 > MAX_TEXT_LEN) return false;
+  return the_mesh.sendGroupMessage(the_mesh.getRTCClock()->getCurrentTimeUnique(), channel.channel,
+    the_mesh.getNodeName(), text, length);
+}
+void UITask::onGameChannelText(uint8_t channel, const char* text, const char* sender) {
+  if (games_screen && curr == games_screen) {
+    char name[40];DisplayDriver::translateUTF8Static(name,sender,sizeof(name));
+    ((GamesScreen*)games_screen)->receiveText(channel,text,name);
+  }
+}
+#ifdef ZYGIS_GAME_DIAGNOSTICS
+size_t UITask::writeGameDiagnostics(uint8_t* output, size_t size) {
+  if (games_screen) return ((GamesScreen*)games_screen)->diagnostics(output, size);
+  if (size < 44) return 0;
+  memset(output, 0, 44); // No game object is resident.
+  return 44;
+}
+#endif
+#ifdef ZYGIS_GAME_TEST_API
+bool UITask::gameTestInput(uint8_t mode, char key) {
+  if (_display) _display->turnOn();
+  _auto_off = millis() + AUTO_OFF_MILLIS;
+  _next_refresh = 0;
+  if (mode == 0) { gotoGamesScreen(); return games_screen && curr == games_screen; }
+  if (mode == 2) { gotoToolsScreen(); return true; }
+  if (mode == 3) {
+    // Local-only screen lifecycle probe; no compose/send or preference edits.
+    switch ((uint8_t)key) {
+      case 0: gotoHomeScreen(); break;
+      case 1: gotoMessagesScreen(); break;
+      case 2: gotoSettingsScreen(); break;
+      case 3: gotoNearbyScreen(); break;
+      case 4: gotoTrailScreen(); break;
+      case 5: gotoClockTools(); break;
+      case 6: gotoToolsScreen(); break;
+      default: return false;
+    }
+    return true;
+  }
+  if (!games_screen || curr != games_screen) return false;
+  if (mode != 1 || (key != KEY_ENTER && key != KEY_CANCEL && key != KEY_UP && key != KEY_DOWN && key != KEY_LEFT && key != KEY_RIGHT && (uint8_t)key != KEY_CONTEXT_MENU)) return false;
+  // Test keys reach only GamesScreen, never chat compose or mesh settings.
+  bool handled = games_screen->handleInput(key);
+  _next_refresh = 0;
+  return handled;
+}
+#endif
+void UITask::playGameSound(bool result) {
+#ifdef PRIVATE_STATUS_REPORTER
+  if (tracker_alert_active) return;
+#endif
+#ifdef PIN_BUZZER
+  if (!buzzer.isPlaying()) buzzer.play(result ? "game:d=32,o=6,b=160:c,e,g" : "game:d=64,o=6,b=180:c");
+#endif
+}
+#endif
+
 void UITask::gotoBotScreen()       { setCurrScreen(bot_screen); }
 void UITask::gotoNearbyScreen()    { setCurrScreen(nearby_screen); }
 
 void UITask::pickAdminTarget() {
-  setCurrScreen(nearby_screen);   // runs NearbyScreen::onShow()'s reset first
+  if (!setCurrScreen(nearby_screen)) return;   // runs NearbyScreen::onShow()'s reset first
   ((NearbyScreen*)nearby_screen)->startPickAdminTarget();
 }
 
 void UITask::openAdminFor(const ContactInfo& ci, bool from_picker) {
-  setCurrScreen(admin_screen);   // runs AdminScreen::onShow()'s reset first
+  if (!setCurrScreen(admin_screen)) return;   // runs AdminScreen::onShow()'s reset first
   ((AdminScreen*)admin_screen)->startFor(ci, from_picker);
 }
 void UITask::gotoDashboardConfig() { setCurrScreen(dashboard_config); }
@@ -1820,14 +2079,14 @@ void UITask::tickClockTools() {
 // Ringtone takes a slot argument that onShow() can't carry — pass it after the
 // reset (setCurrScreen's onShow runs first, then this layers the slot on top).
 void UITask::gotoRingtoneEditor(int slot) {
-  setCurrScreen(ringtone_edit);
+  if (!setCurrScreen(ringtone_edit)) return;
   ((RingtoneEditorScreen*)ringtone_edit)->selectSlot(slot);
 }
 
 // Map is a sub-view variant of the Trail screen: reset via onShow(), then
 // switch into the map view.
 void UITask::gotoMapScreen() {
-  setCurrScreen(trail_screen);
+  if (!setCurrScreen(trail_screen)) return;
   ((TrailScreen*)trail_screen)->showMapView();
 }
 
@@ -1907,76 +2166,166 @@ bool UITask::isMelodyPlaying() {
 }
 
 void UITask::gotoMessagesScreen() {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->reset();
   setCurrScreen(messages_screen);
 }
 
 void UITask::openContactDM(const ContactInfo& ci) {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->reset();
   ((MessagesScreen*)messages_screen)->enterDM(ci);
   setCurrScreen(messages_screen);
 }
 
 void UITask::openChannelHistory(uint8_t channel_idx) {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->reset();
   ((MessagesScreen*)messages_screen)->enterChannel(channel_idx);
   setCurrScreen(messages_screen);
 }
 
 void UITask::openRoomServer(const ContactInfo& ci) {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->reset();
   ((MessagesScreen*)messages_screen)->enterRoom(ci);
   setCurrScreen(messages_screen);
 }
 
 void UITask::shareToMessage(const char* text) {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->startShare(text);
   setCurrScreen(messages_screen);
 }
 
 void UITask::pickLocShareTarget() {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->startPickTarget();
   setCurrScreen(messages_screen);
 }
 
+const char* UITask::favouriteGameLabel(uint8_t game_id) {
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  if (game_id == NodePrefs::FAV_GAME_MENU) return "Games";
+  if (game_id == NodePrefs::FAV_GAME_TICTACTOE) return "Tic-Tac-Toe";
+  if (game_id == NodePrefs::FAV_GAME_TICTACTOE_MESH) return "TTT multiplayer";
+#ifdef SOLO_GAME_SNAKE
+  if (game_id == NodePrefs::FAV_GAME_SNAKE) return "Snake";
+#endif
+#ifdef SOLO_GAME_CHECKERS
+  if (game_id == NodePrefs::FAV_GAME_CHECKERS) return "Checkers";
+#endif
+#ifdef SOLO_GAME_BATTLESHIP
+  if (game_id == NodePrefs::FAV_GAME_BATTLESHIP) return "Battleship";
+#endif
+#ifdef SOLO_GAME_ARTILLERY
+  if (game_id == NodePrefs::FAV_GAME_ARTILLERY) return "Scorched Earth";
+#endif
+#ifdef SOLO_GAME_HOLDEM
+  if (game_id == NodePrefs::FAV_GAME_HOLDEM) return "Texas Hold'em";
+#endif
+#ifdef SOLO_GAME_VEYLITH
+  if (game_id == NodePrefs::FAV_GAME_VEYLITH) return "Veylith Arena";
+#endif
+#endif
+  return nullptr;
+}
+
+void UITask::favouriteLabel(int slot, char* output, size_t size) const {
+  if (!size) return;
+  snprintf(output, size, "%s", "empty");
+  if (!_node_prefs || isFavouriteSlotEmpty(slot)) return;
+  uint8_t kind = favouriteSlotKind(slot);
+  const uint8_t* key = _node_prefs->favourite_contacts[slot];
+  if (kind == NodePrefs::FAV_KIND_GAME) {
+    const char* label = favouriteGameLabel(key[0]);
+    snprintf(output, size, "%s", label ? label : "Game unavailable");
+  } else if (kind == NodePrefs::FAV_KIND_CHANNEL) {
+    ChannelDetails channel;
+    if (the_mesh.getChannel(key[0], channel) && channel.name[0]) {
+      output[0] = '#';
+      DisplayDriver::translateUTF8Static(output + 1, channel.name, size - 1);
+    }
+  } else {
+    for (int i = 0; ; ++i) {
+      ContactInfo contact;
+      if (!the_mesh.getContactByIdx(i, contact)) break;
+      if (!memcmp(contact.id.pub_key, key, NodePrefs::FAVOURITE_PREFIX_LEN)) {
+        DisplayDriver::translateUTF8Static(output, contact.name, size);
+        break;
+      }
+    }
+  }
+}
+
+bool UITask::setFavouriteGameSlot(int slot, uint8_t game_id) {
+  if (!_node_prefs || slot < 0 || slot >= NodePrefs::FAVOURITES_COUNT || !favouriteGameLabel(game_id)) return false;
+  for (int i = 0; i < NodePrefs::FAVOURITES_COUNT; ++i)
+    if (i != slot && _node_prefs->favourite_kinds[i] == NodePrefs::FAV_KIND_GAME &&
+        _node_prefs->favourite_contacts[i][0] == game_id) clearFavouriteSlot(i);
+  memset(_node_prefs->favourite_contacts[slot], 0, NodePrefs::FAVOURITE_PREFIX_LEN);
+  _node_prefs->favourite_contacts[slot][0] = game_id;
+  _node_prefs->favourite_kinds[slot] = NodePrefs::FAV_KIND_GAME;
+  the_mesh.savePrefs();
+  showAlert("Game pinned", 800);
+  return true;
+}
+
+bool UITask::openFavouriteGame(uint8_t game_id) {
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+  if (favouriteGameLabel(game_id)) { gotoGamesScreen(game_id); return true; }
+#endif
+  showAlert("Game not installed", 1000);
+  return false;
+}
+
 void UITask::pickFavouriteTarget(int slot) {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->startPickFavourite(slot);
   setCurrScreen(messages_screen);
 }
 
 void UITask::pickBotChannelTarget() {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->startPickBotChannel();
   setCurrScreen(messages_screen);
 }
 
 void UITask::pickBotRoomTarget() {
+  if (!ensureScreen(messages_screen)) return;
   ((MessagesScreen*)messages_screen)->startPickBotRoom();
   setCurrScreen(messages_screen);
 }
 
 int UITask::addChannelMsg(uint8_t channel_idx, const char* text, uint32_t timestamp,
                           const uint8_t* path, uint8_t path_len, bool own_message) {
+  if (!messages_screen) return -1;
   _last_notif_ch_idx = (int)channel_idx;
   return ((MessagesScreen*)messages_screen)->addChannelMsg(channel_idx, text, timestamp, path, path_len, own_message);
 }
 
 void UITask::armChannelRelay(int pos, uint32_t seq) {
+  if (!messages_screen) return;
   ((MessagesScreen*)messages_screen)->armChannelRelay(pos, seq);
 }
 
 int UITask::getChannelUnreadCount() const {
+  if (!messages_screen) return 0;
   return ((MessagesScreen*)messages_screen)->getTotalChannelUnread();
 }
 
 uint8_t UITask::getChannelUnread(uint8_t channel_idx) const {
+  if (!messages_screen) return 0;
   return ((MessagesScreen*)messages_screen)->chUnread(channel_idx);
 }
 
 void UITask::onMsgAck(uint32_t ack_crc) {
+  if (!messages_screen) return;
   ((MessagesScreen*)messages_screen)->markDmDelivered(ack_crc);
 }
 
 void UITask::onChannelRelayed(uint32_t seq, const uint8_t* repeater_hash, uint8_t hash_size) {
+  if (!messages_screen) return;
   ((MessagesScreen*)messages_screen)->markChannelRelayed(seq, repeater_hash, hash_size);
 }
 
@@ -1985,7 +2334,7 @@ void UITask::onRoomLoginResult(const uint8_t* pub_key, bool success, uint8_t per
   // is a single slot) -- route the result to whichever of the two screens that
   // can trigger a login is currently active, rather than always MessagesScreen.
   if (curr == admin_screen) ((AdminScreen*)admin_screen)->onRoomLoginResult(pub_key, success, permissions);
-  else                      ((MessagesScreen*)messages_screen)->onRoomLoginResult(pub_key, success, permissions);
+  else if (messages_screen) ((MessagesScreen*)messages_screen)->onRoomLoginResult(pub_key, success, permissions);
   // Unlike the keypress-driven showAlert() calls elsewhere, this fires from a
   // background mesh response with no keypress to schedule a redraw — without
   // forcing one, the alert's short expiry can lapse before the next scheduled
@@ -1994,6 +2343,7 @@ void UITask::onRoomLoginResult(const uint8_t* pub_key, bool success, uint8_t per
 }
 
 void UITask::onAdminReply(const uint8_t* pub_key, const char* text) {
+  if (!admin_screen) return;
   ((AdminScreen*)admin_screen)->onAdminReply(pub_key, text);
   _next_refresh = 0;   // same reasoning as onRoomLoginResult above
 }
@@ -2001,10 +2351,12 @@ void UITask::onAdminReply(const uint8_t* pub_key, const char* text) {
 void UITask::addDMMsg(const uint8_t* pub_key, bool outgoing, const char* text, uint32_t sender_timestamp,
                       uint32_t ack_tag, uint32_t ack_deadline_ms, uint8_t resends,
                       const uint8_t* path, uint8_t path_len) {
+  if (!messages_screen) return;
   ((MessagesScreen*)messages_screen)->addDMMsg(pub_key, outgoing, text, sender_timestamp, ack_tag, ack_deadline_ms, resends, path, path_len);
 }
 
 int UITask::getDMUnreadTotal() const {
+  if (!messages_screen) return 0;
   int total = 0;
   for (int i = 0; i < DM_UNREAD_TABLE_SIZE; i++) {
     if (_dm_unread_table[i].count == 0) continue;
@@ -2015,6 +2367,7 @@ int UITask::getDMUnreadTotal() const {
 }
 
 uint8_t UITask::getDMUnread(const uint8_t* pub_key) const {
+  if (!messages_screen) return 0;
   for (int i = 0; i < DM_UNREAD_TABLE_SIZE; i++) {
     if (_dm_unread_table[i].count > 0 && memcmp(_dm_unread_table[i].prefix, pub_key, 4) == 0) {
       int held = ((MessagesScreen*)messages_screen)->dmHistCountForContact(pub_key);
@@ -2025,6 +2378,7 @@ uint8_t UITask::getDMUnread(const uint8_t* pub_key) const {
 }
 
 void UITask::reconcileDMUnread() {
+  if (!messages_screen) return;
   for (int i = 0; i < DM_UNREAD_TABLE_SIZE; i++) {
     if (_dm_unread_table[i].count == 0) continue;
     if (((MessagesScreen*)messages_screen)->dmHistCountForContact(_dm_unread_table[i].prefix) == 0)
@@ -2083,7 +2437,7 @@ void UITask::msgRead(int msgcount) {
   if (msgcount == 0) {
     _room_unread = 0;
     memset(_dm_unread_table, 0, sizeof(_dm_unread_table));
-    ((MessagesScreen*)messages_screen)->clearAllChannelUnread();
+    if (messages_screen) ((MessagesScreen*)messages_screen)->clearAllChannelUnread();
   }
 }
 
@@ -2168,15 +2522,12 @@ void UITask::renderAlertOverlay() {
     _display->drawTextCentered(_display->width() / 2, box_y + pad + i * lh, s_wrap_lines[i]);
 }
 
-void UITask::setCurrScreen(UIScreen* c) {
-  // Fail safe on a null target: a screen pointer left uninitialised (member
-  // declared + navigator wired, but the `new XScreen()` line forgotten in
-  // begin()) stays nullptr thanks to the in-class initialisers. Bail here so
-  // that mistake is an inert no-op instead of a null deref in render()/poll().
-  if (!c) return;
+bool UITask::setCurrScreen(UIScreen*& c) {
+  if (!ensureScreen(c)) return false;
   curr = c;
-  c->onShow();          // central per-visit reset hook (see UIScreen::onShow)
+  c->onShow();
   _next_refresh = 100;
+  return true;
 }
 
 void UITask::syncLockToHome() {
@@ -2669,6 +3020,9 @@ void UITask::pollHallSensor() {
 }
 
 void UITask::loop() {
+#ifdef SOLO_UI_ON_DEMAND
+  collectInactiveScreens();
+#endif
 #ifdef PRIVATE_STATUS_REPORTER
   trackerAudioLoop();
   bool button_down = false;
@@ -2684,7 +3038,7 @@ void UITask::loop() {
 #endif
   // Background delivery: resend pending on-device DMs whose ACK timed out, and
   // finalise the ✗ marker — runs regardless of which screen is active.
-  ((MessagesScreen*)messages_screen)->tickDmResends();
+  if (messages_screen) ((MessagesScreen*)messages_screen)->tickDmResends();
   reconcileDMUnread();
 #if UI_HAS_JOYSTICK
   uint8_t joy_rot = _node_prefs ? _node_prefs->joystick_rotation : JOYSTICK_ROTATION;
@@ -2965,6 +3319,9 @@ void UITask::loop() {
       _display->endFrame();
       _next_refresh = millis() + Features::LOCKSCREEN_REFRESH_MS;
     } else if (!_locked && millis() >= _next_refresh && curr) {
+#if defined(ZYGIS_GAME_DIAGNOSTICS) && defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+      uint32_t frame_started = micros();
+#endif
       _display->startFrame();
       _kb.beginFrame();
       int delay_millis = curr->render(*_display);
@@ -2986,6 +3343,9 @@ void UITask::loop() {
         _next_refresh = millis() + delay_millis;
       }
       _display->endFrame();
+#if defined(ZYGIS_GAME_DIAGNOSTICS) && defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+      if (curr == games_screen) ((GamesScreen*)games_screen)->recordFrameMicros(micros() - frame_started);
+#endif
     }
 #if AUTO_OFF_MILLIS > 0
 #ifdef KEEP_DISPLAY_ON_USB
@@ -4006,3 +4366,9 @@ void UITask::cycleBuzzerMode() {
   _next_refresh = 0;
 #endif
 }
+
+#ifdef SOLO_GAME_VEYLITH
+int UITask::loadVeylith(uint8_t* bytes,size_t size){return the_mesh.loadVeylith(bytes,size);}
+bool UITask::saveVeylith(const uint8_t* bytes,size_t size){return the_mesh.saveVeylith(bytes,size);}
+bool UITask::backupVeylith(){return the_mesh.backupVeylith();}
+#endif

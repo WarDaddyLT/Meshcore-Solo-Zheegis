@@ -110,6 +110,14 @@ struct DiscoverResult {
 
 class MyMesh : public BaseChatMesh, public DataStoreHost {
 public:
+#ifdef SOLO_GAME_VEYLITH
+  int loadVeylith(uint8_t* bytes,size_t size);
+  bool saveVeylith(const uint8_t* bytes,size_t size);
+  bool backupVeylith();
+#endif
+  // Games lists existing private channels using the shared privacy predicate.
+  bool getGameChannel(uint8_t slot, ChannelDetails& channel, uint8_t digest[16]);
+  bool canSendGameMessage() const;
   MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMeshTables &tables, DataStore& store, AbstractUITask* ui=NULL);
 
   void begin(bool has_display);
@@ -549,7 +557,7 @@ private:
   void handleTrackerMessage(const mesh::GroupChannel& channel, mesh::Packet* packet, const char* text);
   const char* verifyTrackerChannel(ChannelDetails& channel);
   void replyRoute(mesh::Packet* packet, const char* command);
-  struct NearbyRepeater { uint8_t key[8]; int8_t rssi, snr_in, snr_out; };
+  struct NearbyRepeater { uint8_t key[8]; int16_t rssi; int8_t snr_in, snr_out; };
   NearbyRepeater nearby_repeaters[64];
   uint8_t nearby_count = 0, nearby_reported = 0;
   bool nearby_running = false, nearby_overflow = false;

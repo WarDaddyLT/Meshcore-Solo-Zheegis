@@ -12,6 +12,7 @@ GUIDES = [
     'docs/zygis_migration.md',
     'docs/upstream-maintenance.md', 'docs/community-intro.lt.md',
     'docs/upstream-funding.md',
+    'docs/games.md', 'docs/family-profile.md', 'docs/veylith-arena.md',
 ]
 NEUTRAL_HANDLES = {'Tracker01', 'DeviceName', 'Handle'}
 

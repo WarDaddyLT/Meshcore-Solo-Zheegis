@@ -16,6 +16,7 @@ cmake-*
 compile_commands.json
 .venv/
 venv/
+__pycache__/
 platformio.local.ini
 CODE_REVIEW.md
 tools/pngs/

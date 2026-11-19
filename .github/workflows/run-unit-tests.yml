@@ -38,8 +38,30 @@ jobs:
           python test/tracking/test_app_cli.py
           python test/tracking/test_calendar.py
           python test/tracking/test_tracking_menu.py
+          python test/tracking/test_game_priority.py
+      - name: Family channel-only regressions
+        run: |
+          python test/zygis/test_channel_only.py
+          python test/zygis/test_family_channels.py
+          python test/zygis/test_settings_lifetime.py
+      - name: Veylith assets, progression, CPU and UI
+        run: |
+          python tools/veylith/generate_content.py --check
+          python tools/veylith/generate_assets.py --check
+          python test/veylith/test_veylith.py
       - name: Native suites
         run: pio test -e native -e native_kiss_modem -vv
+      - name: Offline games and quick launch
+        run: |
+          python test/games/test_tictactoe.py
+          python test/games/test_snake.py
+          python test/games/test_checkers.py
+          python test/games/test_battleship.py
+          python test/games/test_artillery.py
+          python test/games/test_holdem.py
+          python test/games/test_quick_launch.py
+          python test/games/test_screen_lifecycle.py
+          python test/games/test_game_channel_policy.py
       - name: Ordinary Solo compatibility build
         run: pio run -e sim_companion_radio
 
@@ -55,6 +77,14 @@ jobs:
             environment: LilyGo_T-Echo-Lite_keyshield_zygis
           - board: ThinkNode M5
             environment: ThinkNode_M5_zygis
+          - board: Wio Tracker L1 Pro
+            environment: WioTrackerL1_zygis
+          - board: Wio Tracker L1 Pro games preview
+            environment: WioTrackerL1_zygis_games
+          - board: Wio Tracker L1 Pro family
+            environment: WioTrackerL1_zygis_family
+          - board: Wio Tracker L1 Pro Arena CPU preview
+            environment: WioTrackerL1_zygis_veylith
           - board: Wio Tracker e-ink
             environment: WioTrackerL1Eink_zygis
     steps:

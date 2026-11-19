@@ -852,6 +852,9 @@ void DataStore::restoreRTCTime() {
 }
 
 void DataStore::loadContacts(DataStoreHost* host) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  (void)host;return;
+#else
 File file = openRead(_getContactsChannelsFS(), "/contacts3");
     if (file) {
       bool full = false;
@@ -880,9 +883,13 @@ File file = openRead(_getContactsChannelsFS(), "/contacts3");
       }
       file.close();
     }
+#endif
 }
 
 void DataStore::saveContacts(DataStoreHost* host, bool (*filter)(const ContactInfo& c)) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  (void)host;(void)filter;return;
+#else
   FILESYSTEM* fs = _getContactsChannelsFS();
   // Write to a temp file, then atomically rename it over /contacts3 only once
   // every record has written cleanly. The old code truncated /contacts3 up
@@ -926,6 +933,7 @@ void DataStore::saveContacts(DataStoreHost* host, bool (*filter)(const ContactIn
   } else {
     fs->remove("/contacts3.tmp");   // keep the previous good /contacts3
   }
+#endif
 }
 
 bool DataStore::loadChannels(DataStoreHost* host) {

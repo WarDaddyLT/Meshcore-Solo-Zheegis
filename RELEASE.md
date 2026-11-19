@@ -21,3 +21,12 @@ host tests or firmware builds as physical-device validation.
 
 Inherited Solo/MeshCore release workflows are manual in this fork. The standard
 CI does not create tags, publish releases, upload firmware, or deploy Pages.
+
+Run **Build Žygis release artifacts** manually from GitHub Actions on the
+candidate ref. It builds each environment in `solo/zygis/platformio.ini` and
+uploads a separate artifact with a commit manifest and SHA-256 checksums.
+Firmware images are available for manual release review. The workflow does
+not create a release or tag. Diagnostic environments are named `*_test`.
+
+To build and package an environment locally, run
+`python3 scripts/zygis_release.py WioTrackerL1_zygis`.

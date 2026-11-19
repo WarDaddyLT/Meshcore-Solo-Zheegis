@@ -482,11 +482,23 @@ struct NodePrefs {  // persisted to file
   //     6 zero bytes with probability 2^-48).
   //   FAV_KIND_CHANNEL — channel index in byte 0, rest zero. Never empty:
   //     channel 0 is all-zero, so emptiness is decided by the kind first.
+  //   FAV_KIND_GAME — stable game ID in byte 0, rest zero. ID 0 opens Games.
+  //     Shares the existing payload and kind bytes; no preference layout change.
   static const uint8_t FAVOURITES_COUNT = 6;
   static const uint8_t FAVOURITE_PREFIX_LEN = 6;
   static const uint8_t FAV_KIND_CONTACT = 0;
   static const uint8_t FAV_KIND_CHANNEL = 1;
-  static const uint8_t FAV_KIND_MAX     = 1;
+  static const uint8_t FAV_KIND_GAME    = 2;
+  static const uint8_t FAV_GAME_MENU    = 0;
+  static const uint8_t FAV_GAME_TICTACTOE = 1;
+  static const uint8_t FAV_GAME_TICTACTOE_MESH = 2;
+  static const uint8_t FAV_GAME_SNAKE = 3;
+  static const uint8_t FAV_GAME_CHECKERS = 4;
+  static const uint8_t FAV_GAME_BATTLESHIP = 5;
+  static const uint8_t FAV_GAME_ARTILLERY = 6;
+  static const uint8_t FAV_GAME_HOLDEM = 7;
+  static const uint8_t FAV_GAME_VEYLITH = 8;
+  static const uint8_t FAV_KIND_MAX     = 2;
   uint8_t favourite_contacts[FAVOURITES_COUNT][FAVOURITE_PREFIX_LEN]; // [del→onContactRemoved/onChannelRemoved]
   // What each favourite_contacts[] slot holds (see FAV_KIND_* above).
   // On-disk position is at the struct's append-only tail (see the

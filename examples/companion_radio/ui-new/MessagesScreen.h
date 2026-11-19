@@ -16,11 +16,19 @@ class MessagesScreen : public UIScreen {
   static const char* const NOTIF_LABELS[3];
   static const char* const MELODY_LABELS[3];
 
-  enum Phase { MODE_SELECT, CONTACT_PICK, DM_HIST, MSG_PICK, CHANNEL_PICK, CHANNEL_HIST, KEYBOARD };
+  enum Phase { MODE_SELECT, CONTACT_PICK, DM_HIST, MSG_PICK, CHANNEL_PICK, CHANNEL_HIST, KEYBOARD, GAME_PICK };
   Phase _phase;
 
   // MODE_SELECT
-  int _mode_sel;  // 0=Direct, 1=Channel, 2=Room Servers
+  int _mode_sel;  // 0=Direct, 1=Channel, 2=Room Servers, 3=Games when pinning
+  uint8_t _game_sel = 0;
+  int pickerModeCount() const {
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE)
+    return _pick_fav_slot >= 0 ? 4 : 3;
+#else
+    return 3;
+#endif
+  }
 
   // CONTACT_PICK
   int _contact_sel, _contact_scroll;
@@ -608,31 +616,9 @@ class MessagesScreen : public UIScreen {
   // Fill _pin_slot_labels for the "Pick slot" submenu: each dial slot with its
   // current occupant, contact or channel.
   void buildSlotLabels() {
-    NodePrefs* p = _task->getNodePrefs();
-    for (int s = 0; s < NodePrefs::FAVOURITES_COUNT; s++) {
-      if (!p || _task->isFavouriteSlotEmpty(s)) {
-        snprintf(_pin_slot_labels[s], sizeof(_pin_slot_labels[s]), "Slot %d: empty", s + 1);
-        continue;
-      }
-      char nm[16] = "?";
-      const uint8_t* pfx = p->favourite_contacts[s];
-      if (_task->favouriteSlotKind(s) == NodePrefs::FAV_KIND_CHANNEL) {
-        ChannelDetails ch;
-        if (the_mesh.getChannel(pfx[0], ch) && ch.name[0]) {
-          nm[0] = '#';
-          DisplayDriver::translateUTF8Static(nm + 1, ch.name, sizeof(nm) - 1);
-        }
-      } else {
-        for (int idx = 0; ; idx++) {
-          ContactInfo c2;
-          if (!the_mesh.getContactByIdx(idx, c2)) break;
-          if (memcmp(c2.id.pub_key, pfx, NodePrefs::FAVOURITE_PREFIX_LEN) == 0) {
-            DisplayDriver::translateUTF8Static(nm, c2.name, sizeof(nm));
-            break;
-          }
-        }
-      }
-      snprintf(_pin_slot_labels[s], sizeof(_pin_slot_labels[s]), "Slot %d: %s", s + 1, nm);
+    for (int slot = 0; slot < NodePrefs::FAVOURITES_COUNT; ++slot) {
+      char name[16]; _task->favouriteLabel(slot, name, sizeof(name));
+      snprintf(_pin_slot_labels[slot], sizeof(_pin_slot_labels[slot]), "Slot %d: %s", slot + 1, name);
     }
   }
 
@@ -1366,13 +1352,13 @@ public:
       if (_pick_fav_slot >= 0) snprintf(hdr, sizeof(hdr), "PIN SLOT %d", _pick_fav_slot + 1);
       else                     snprintf(hdr, sizeof(hdr), "MESSAGE");
       display.drawCenteredHeader(hdr, true, _ctx_menu.active);
-      const char* opts[] = { "Direct message", "Channels", "Room Servers" };
-      int badges[3] = {
+      const char* opts[] = { "Direct message", "Channels", "Room Servers", "Games" };
+      int badges[4] = {
         getDMUnreadTotal(),
         _task->getChannelUnreadCount(),
-        _task->getRoomUnreadCount()
+        _task->getRoomUnreadCount(), 0
       };
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < pickerModeCount(); i++) {
         int y = start_y + i * item_h;
         bool sel = (i == _mode_sel);
         display.drawSelectionRow(0, y - 1, display.width(), item_h - 1, sel);
@@ -1388,6 +1374,36 @@ public:
       // since that return previously ignored this call's result entirely.
       if (_ctx_menu.active) { int r = _ctx_menu.render(display); if (mq_delay <= 0 || r < mq_delay) mq_delay = r; }
 
+    } else if (_phase == GAME_PICK) {
+      display.drawCenteredHeader("PIN GAME");
+      const char* labels[] = { "Games menu", "Tic-Tac-Toe CPU", "Tic-Tac-Toe mesh"
+#ifdef SOLO_GAME_SNAKE
+        , "Snake"
+#endif
+#ifdef SOLO_GAME_CHECKERS
+        , "Checkers"
+#endif
+#ifdef SOLO_GAME_BATTLESHIP
+        , "Battleship"
+#endif
+#ifdef SOLO_GAME_ARTILLERY
+        , "Scorched Earth"
+#endif
+#ifdef SOLO_GAME_HOLDEM
+        , "Texas Hold'em"
+#endif
+#ifdef SOLO_GAME_VEYLITH
+        , "Veylith Arena"
+#endif
+      };
+      unsigned rows = (display.height() - start_y) / item_h;
+      if (!rows) rows=1;
+      unsigned start = (_game_sel / rows) * rows;
+      for (unsigned i = start; i < sizeof(labels)/sizeof(labels[0]) && i < start+rows; ++i) {
+        int y = start_y + (i-start) * item_h;
+        display.drawSelectionRow(0, y - 1, display.width(), item_h - 1, _game_sel == i);
+        display.setCursor(2, y); display.print(labels[i]);
+      }
     } else if (_phase == CONTACT_PICK) {
       display.drawCenteredHeader(_room_mode ? "SELECT ROOM" : "SELECT CONTACT", true, _ctx_menu.active);
 
@@ -1955,9 +1971,10 @@ public:
         return true;
       }
       if (c == KEY_CANCEL) { _task->gotoHomeScreen(); return true; }
-      if (c == KEY_UP)   { _mode_sel = (_mode_sel > 0) ? _mode_sel - 1 : 2; return true; }
-      if (c == KEY_DOWN) { _mode_sel = (_mode_sel < 2) ? _mode_sel + 1 : 0; return true; }
+      if (c == KEY_UP)   { _mode_sel = (_mode_sel + pickerModeCount() - 1) % pickerModeCount(); return true; }
+      if (c == KEY_DOWN) { _mode_sel = (_mode_sel + 1) % pickerModeCount(); return true; }
       if (c == KEY_CONTEXT_MENU) {
+        if (_mode_sel == 3) return true;
         // PopupMenu stores the title pointer verbatim — use static strings.
         static const char* MODE_TITLES[] = { "DM options", "Channel options", "Room options" };
         _ctx_menu.begin(MODE_TITLES[_mode_sel < 3 ? _mode_sel : 0], 1);
@@ -1965,6 +1982,7 @@ public:
         return true;
       }
       if (c == KEY_ENTER) {
+        if (_mode_sel == 3 && _pick_fav_slot >= 0) { _phase = GAME_PICK; _game_sel = 0; return true; }
         if (_mode_sel == 1) {
           _phase = CHANNEL_PICK;
         } else {
@@ -1977,6 +1995,29 @@ public:
         return true;
       }
 
+    } else if (_phase == GAME_PICK) {
+      if (c == KEY_CANCEL) { _phase = MODE_SELECT; return true; }
+#ifdef SOLO_GAME_VEYLITH
+      const unsigned count=9;
+#elif defined(SOLO_GAME_HOLDEM)
+      const unsigned count=8;
+#elif defined(SOLO_GAME_ARTILLERY)
+      const unsigned count=7;
+#elif defined(SOLO_GAME_BATTLESHIP)
+      const unsigned count=6;
+#elif defined(SOLO_GAME_CHECKERS)
+      const unsigned count=5;
+#elif defined(SOLO_GAME_SNAKE)
+      const unsigned count=4;
+#else
+      const unsigned count=3;
+#endif
+      if (c == KEY_UP) { _game_sel = (_game_sel + count - 1) % count; return true; }
+      if (c == KEY_DOWN) { _game_sel = (_game_sel + 1) % count; return true; }
+      if (c == KEY_ENTER && _pick_fav_slot >= 0 && _task->setFavouriteGameSlot(_pick_fav_slot, _game_sel)) {
+        _pick_fav_slot = -1; _task->gotoHomeScreen();
+      }
+      return true;
     } else if (_phase == CONTACT_PICK) {
       // Context menu consumes all input while open
       if (_ctx_menu.active) {

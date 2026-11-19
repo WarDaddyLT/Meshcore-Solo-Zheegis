@@ -56,6 +56,8 @@ int main() {
   assert(m.tracker_prefs.status_channel == 255 && m.tracker_prefs.status_interval == 0);
   m.tracker_prefs.status_channel = 3;
   m.tracker_prefs.status_interval = 86400;
+  // Channel names can have nonzero unused bytes after the first NUL.
+  memset(m.tracker_prefs.status_name, 0xA5, sizeof(m.tracker_prefs.status_name));
   strcpy(m.tracker_prefs.status_name, "private");
   memset(m.tracker_prefs.status_key, 42, 32);
   m.saveTrackerPrefs();
@@ -67,6 +69,14 @@ int main() {
   assert(!strcmp(reloaded.tracker_prefs.status_name, "private"));
   assert(!memcmp(reloaded.tracker_prefs.status_key, m.tracker_prefs.status_key, 32));
   auto good = *store.files["/zygis1"];
+  assert(good[41] == 0);
+  // Read existing valid names even if unused trailing bytes were not padded.
+  (*store.files["/zygis1"])[41] = 0xA5;
+  MyMesh legacy; legacy.loadTrackerPrefs();
+  assert(legacy.tracker_prefs.status_channel == 3);
+  assert(!strcmp(legacy.tracker_prefs.status_name, "private"));
+  assert(legacy.tracker_prefs.status_name[31] == 0);
+  *store.files["/zygis1"] = good;
   // Short writes never replace the previous complete record.
   store.fail = true; m.tracker_prefs.status_interval = 17; m.saveTrackerPrefs();
   assert(store.commits == 1 && *store.files["/zygis1"] == good);
@@ -79,11 +89,14 @@ int main() {
     *store.files["/zygis1"] = std::vector<uint8_t>(good.begin(), good.begin() + n);
     rejected();
   }
-  for (size_t offset : {size_t(0), size_t(4), size_t(8), size_t(9), size_t(41)}) {
+  for (size_t offset : {size_t(0), size_t(4), size_t(8), size_t(9)}) {
     *store.files["/zygis1"] = good;
     (*store.files["/zygis1"])[offset] = offset == 8 ? MAX_GROUP_CHANNELS : 255;
     rejected();
   }
+  *store.files["/zygis1"] = good;
+  memset(store.files["/zygis1"]->data() + 10, 0xA5, 32);
+  rejected(); // Unterminated names are still invalid.
 }
 '''.replace('RECORD', record).replace('METHODS', methods)
 with tempfile.TemporaryDirectory() as tmp:

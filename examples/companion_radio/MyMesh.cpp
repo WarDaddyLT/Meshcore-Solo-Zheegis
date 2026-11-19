@@ -10,6 +10,15 @@
 #include <Arduino.h> // needed for PlatformIO
 #include <Mesh.h>
 
+#if defined(ZYGIS_USB_MEMORY_DIAG) && defined(NRF52_PLATFORM)
+#include <malloc.h>
+#include <unistd.h>
+#include <FreeRTOS.h>
+#include <task.h>
+extern unsigned char __HeapBase[];
+extern unsigned char __HeapLimit[];
+#endif
+
 #ifdef DISPLAY_CLASS
 #include "helpers/ui/DisplayDriver.h"
 #include "UITask.h"
@@ -242,6 +251,11 @@ bool MyMesh::Frame::isChannelMsg() const {
 }
 
 void MyMesh::addToOfflineQueue(const uint8_t frame[], int len) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  // Four live handoff frames for the companion pull protocol, never an
+  // offline backlog. Tracker/game processing occurs before this handoff.
+  if(!_serial || !_serial->isClientConnected()){offline_queue_len=0;return;}
+#endif
   if (offline_queue_len >= OFFLINE_QUEUE_SIZE) {
     MESH_DEBUG_PRINTLN("WARN: offline_queue is full!");
     int pos = 0;
@@ -266,6 +280,9 @@ void MyMesh::addToOfflineQueue(const uint8_t frame[], int len) {
 }
 
 int MyMesh::getFromOfflineQueue(uint8_t frame[]) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  if(!_serial || !_serial->isClientConnected()){offline_queue_len=0;return 0;}
+#endif
   if (offline_queue_len > 0) {         // check offline queue
     size_t len = offline_queue[0].len; // take from top of queue
     memcpy(frame, offline_queue[0].buf, len);
@@ -987,6 +1004,10 @@ void MyMesh::onSignedMessageRecv(const ContactInfo &from, mesh::Packet *pkt, uin
 
 void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packet *pkt, uint32_t timestamp,
                                   const char *text) {
+#ifdef ZYGIS_CHANNEL_ONLY
+  int private_idx=findChannelIdx(channel);ChannelDetails private_channel;
+  if(private_idx<0 || !getChannel(private_idx,private_channel) || privateStatusChannel(private_channel))return;
+#endif
 #ifdef PRIVATE_STATUS_REPORTER
   handleTrackerMessage(channel, pkt, text);
 #endif
@@ -1011,6 +1032,17 @@ void MyMesh::onChannelMessageRecv(const mesh::GroupChannel &channel, mesh::Packe
     return;
   }
   uint8_t channel_idx = (uint8_t)idx;
+#if defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE) && defined(DISPLAY_CLASS)
+  if (_ui) {
+    const char* body = strstr(text, ": ");
+    if (body && !strncmp(body + 2, "~G1:", 4)) {
+      char sender[40];size_t length=size_t(body-text);
+      if(length>=sizeof(sender))length=sizeof(sender)-1;
+      memcpy(sender,text,length);sender[length]=0;
+      _ui->onGameChannelText(channel_idx,body+2,sender);
+    }
+  }
+#endif
   out_frame[i++] = channel_idx;
   uint8_t path_len = out_frame[i++] = pkt->isRouteFlood() ? pkt->path_len : 0xFF;
 
@@ -2086,6 +2118,28 @@ bool MyMesh::setChannelLocal(uint8_t idx, const ChannelDetails& ch) {
   return true;
 }
 
+bool MyMesh::canSendGameMessage() const {
+#ifdef PRIVATE_STATUS_REPORTER
+  // Keep paced tracker replies ahead of games, including between reply sends.
+  if (tracker_reply_count) return false;
+#endif
+  return _mgr->getOutboundTotal() == 0;
+}
+
+bool MyMesh::getGameChannel(uint8_t slot, ChannelDetails& channel, uint8_t digest[16]) {
+#if defined(SOLO_GAMES_ENABLED) && defined(PRIVATE_STATUS_REPORTER)
+  // Exactly the same privacy classification as the existing tracking channel
+  // picker. No tracking binding, origin record or extra confirmation required.
+  if (!getChannel(slot, channel) || privateStatusChannel(channel)) return false;
+  uint8_t hash[32];
+  mesh::Utils::sha256(hash, sizeof(hash), channel.channel.secret, sizeof(channel.channel.secret));
+  memcpy(digest, hash, 16);
+  return true;
+#else
+  return false;
+#endif
+}
+
 void MyMesh::handleCmdFrame(size_t len) {
   if (cmd_frame[0] == CMD_DEVICE_QUERY && len >= 2) { // sent when app establishes connection
     app_target_ver = cmd_frame[1];                    // which version of protocol does app understand
@@ -2163,6 +2217,9 @@ void MyMesh::handleCmdFrame(size_t len) {
     i += 4;
     uint8_t *pub_key_prefix = &cmd_frame[i];
     i += 6;
+#ifdef ZYGIS_CHANNEL_ONLY
+    writeDisabledFrame();return; // Phone clients use the channel-send command.
+#endif
     ContactInfo *recipient = lookupContactByPubKey(pub_key_prefix, 6);
     if (recipient && (txt_type == TXT_TYPE_PLAIN || txt_type == TXT_TYPE_CLI_DATA)) {
       char *text = (char *)&cmd_frame[i];
@@ -2229,6 +2286,9 @@ void MyMesh::handleCmdFrame(size_t len) {
     } else {
       ChannelDetails channel;
       bool success = getChannel(channel_idx, channel);
+#ifdef ZYGIS_CHANNEL_ONLY
+      success=success && !privateStatusChannel(channel);
+#endif
       if (success && sendGroupMessage(msg_timestamp, channel.channel, _prefs.node_name, text, len - i)) {
         writeOKFrame();
 #ifdef DISPLAY_CLASS
@@ -3160,6 +3220,46 @@ void MyMesh::handleCmdFrame(size_t len) {
     } else {
       writeErrFrame(ERR_CODE_TABLE_FULL);
     }
+#if defined(ZYGIS_GAME_DIAGNOSTICS) && defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE) && defined(DISPLAY_CLASS)
+  } else if (cmd_frame[0] == 0x7A && len == 1) {
+    out_frame[0] = 0x7A; out_frame[1] = 1;
+    size_t n = _ui ? _ui->writeGameDiagnostics(out_frame + 2, sizeof(out_frame) - 2) : 0;
+    _serial->writeFrame(out_frame, n + 2);
+#endif
+#if defined(ZYGIS_GAME_TEST_API) && defined(SOLO_GAMES_ENABLED) && defined(SOLO_GAME_TICTACTOE) && defined(DISPLAY_CLASS)
+  } else if (cmd_frame[0] == 0x79 && len == 3) {
+    out_frame[0] = 0x79;
+    out_frame[1] = _ui && _ui->gameTestInput(cmd_frame[1], (char)cmd_frame[2]) ? 1 : 0;
+    _serial->writeFrame(out_frame, 2);
+#endif
+#if defined(ZYGIS_USB_MEMORY_DIAG) && defined(NRF52_PLATFORM)
+  } else if (cmd_frame[0] == 0x7D && len == 1) {
+    // Local diagnostic extension: raw counters only; no allocation or settings writes.
+    struct mallinfo allocation = mallinfo();
+    uint32_t base = (uint32_t)(uintptr_t)__HeapBase;
+    uint32_t limit = (uint32_t)(uintptr_t)__HeapLimit;
+    uint32_t top = (uint32_t)(uintptr_t)sbrk(0);
+    uint32_t total = limit - base;
+    uint32_t used = (uint32_t)allocation.uordblks;
+    uint32_t values[] = {
+      base, limit, top, (uint32_t)allocation.arena, used,
+      (uint32_t)allocation.fordblks,
+      (top >= base && top <= limit) ? limit - top : 0,
+      used < total ? total - used : 0,
+      (uint32_t)uxTaskGetStackHighWaterMark(NULL), sizeof(StackType_t),
+      (uint32_t)allocation.keepcost, millis()
+    };
+    size_t i = 0;
+    out_frame[i++] = 0x7D;
+    out_frame[i++] = 1;  // schema version
+    out_frame[i++] = 1;  // nRF52
+    out_frame[i++] = sizeof(values) / sizeof(values[0]);
+    for (uint32_t value : values) {
+      for (unsigned shift = 0; shift < 32; shift += 8)
+        out_frame[i++] = uint8_t(value >> shift);
+    }
+    _serial->writeFrame(out_frame, i);
+#endif
 #ifdef ENABLE_SCREENSHOT
   } else if (cmd_frame[0] == CMD_GET_SCREENSHOT) {
     handleScreenshotRequest();
@@ -3474,6 +3574,9 @@ void MyMesh::checkSerialInterface() {
 }
 
 void MyMesh::loop() {
+#ifdef ZYGIS_CHANNEL_ONLY
+  if(!_serial || !_serial->isClientConnected())offline_queue_len=0;
+#endif
   BaseChatMesh::loop();
 #ifdef TECHO_STATUS_LEDS
   board.updateTrackerLeds();
@@ -3591,11 +3694,12 @@ void MyMesh::loadTrackerPrefs() {
   uint32_t seconds = uint32_t(data[4]) | (uint32_t(data[5]) << 8) |
                      (uint32_t(data[6]) << 16) | (uint32_t(data[7]) << 24);
   if (seconds > 86400 || (data[8] != 255 && data[8] >= MAX_GROUP_CHANNELS) ||
-      data[9] > 1 || data[41] != 0) return;
+      data[9] > 1 || !memchr(data + 10, 0, 32)) return;
   tracker_prefs.status_interval = seconds;
   tracker_prefs.status_channel = data[8];
   tracker_prefs.status_position_known = data[9];
-  memcpy(tracker_prefs.status_name, data + 10, 32);
+  // Older records may contain unused nonzero bytes after the name terminator.
+  strncpy(tracker_prefs.status_name, (const char*)data + 10, sizeof(tracker_prefs.status_name));
   memcpy(tracker_prefs.status_key, data + 42, 32);
 }
 
@@ -3606,7 +3710,9 @@ void MyMesh::saveTrackerPrefs() {
   for (unsigned i = 0; i < 4; ++i) data[4 + i] = uint8_t(seconds >> (8 * i));
   data[8] = tracker_prefs.status_channel;
   data[9] = tracker_prefs.status_position_known;
-  memcpy(data + 10, tracker_prefs.status_name, 32);
+  // ChannelDetails names are NUL-terminated but not necessarily zero-padded.
+  // Canonicalize the stored name so valid bindings survive a reboot.
+  strncpy((char*)data + 10, tracker_prefs.status_name, sizeof(tracker_prefs.status_name) - 1);
   memcpy(data + 42, tracker_prefs.status_key, 32);
   auto file = _store->openWrite("/zygis1.tmp");
   if (!file) return;
@@ -3865,7 +3971,7 @@ void MyMesh::handleNearbyResponse(mesh::Packet* packet) {
   if (nearby_count == 64) { nearby_overflow = true; return; }
   auto& repeater = nearby_repeaters[nearby_count++];
   memcpy(repeater.key, packet->payload + 6, 8);
-  repeater.rssi = (int8_t)_radio->getLastRSSI();
+  repeater.rssi = (int16_t)_radio->getLastRSSI();
   repeater.snr_in = packet->_snr;
   repeater.snr_out = packet->payload[1];
 }
@@ -3878,7 +3984,7 @@ void MyMesh::nearbyLoop() {
     for (unsigned i = 0; i < 8; ++i) sprintf(key + 2*i, "%02X", repeater.key[i]);
     ContactInfo* contact = lookupContactByPubKey(repeater.key, 8);
     char text[101];
-    snprintf(text, sizeof(text), "Direct %u: %.31s [%s] RSSI:%d SNR:%.1f/%.1f", nearby_reported + 1,
+    snprintf(text, sizeof(text), "Direct %u: %.31s [%s] RX:%ddBm SNR in/out:%+.1f/%+.1fdB", nearby_reported + 1,
              contact ? contact->name : "unknown", key, repeater.rssi, repeater.snr_in / 4.0, repeater.snr_out / 4.0);
     if (!trackerReply(text)) return;
     ++nearby_reported;
@@ -4031,5 +4137,38 @@ void MyMesh::logTxFail(mesh::Packet* packet, int len) {
     if (pending.packet == packet) pending.packet = nullptr;
   }
 #endif
+}
+#endif
+
+#ifdef SOLO_GAME_VEYLITH
+// Separate from radio identity, channels, Solo preferences and GPS trails.
+#ifdef ZYGIS_GAME_TEST_API
+static const char* VEYLITH_FILE="/veytest1";
+static const char* VEYLITH_TMP="/veytest.tmp";
+#else
+static const char* VEYLITH_FILE="/veylith1";
+static const char* VEYLITH_TMP="/veylith.tmp";
+#endif
+int MyMesh::loadVeylith(uint8_t* bytes,size_t size) {
+  File file=_store->openRead(VEYLITH_FILE);
+  if(!file)return -1;
+  if(file.size()!=size){file.close();return -2;}
+  bool ok=file.read(bytes,size)==int(size);file.close();return ok?int(size):-2;
+}
+bool MyMesh::saveVeylith(const uint8_t* bytes,size_t size) {
+  if(size!=437)return false;
+  File file=_store->openWrite(VEYLITH_TMP);if(!file)return false;
+  bool ok=file.write(bytes,size)==size;file.close();
+  if(!ok){_store->removeFile(VEYLITH_TMP);return false;}
+  return _store->commitFile(VEYLITH_TMP,VEYLITH_FILE);
+}
+bool MyMesh::backupVeylith() {
+  File old=_store->openRead(VEYLITH_FILE);if(!old)return false;
+  File copy=_store->openWrite("/veylith.bad.tmp");if(!copy){old.close();return false;}
+  uint8_t buffer[64];bool ok=true;
+  while(old.available()){int n=old.read(buffer,sizeof(buffer));if(n<=0 || copy.write(buffer,n)!=size_t(n)){ok=false;break;}}
+  old.close();copy.close();
+  if(!ok){_store->removeFile("/veylith.bad.tmp");return false;}
+  return _store->commitFile("/veylith.bad.tmp","/veylith.bad");
 }
 #endif

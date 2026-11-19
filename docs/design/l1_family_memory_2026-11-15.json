@@ -1,0 +1,244 @@
+{
+  "date": "2026-11-15",
+  "profile": "WioTrackerL1_zygis_family",
+  "target": "Wio Tracker L1 Pro OLED",
+  "static_ram_bytes": 63280,
+  "application_flash_bytes": 510316,
+  "home_free_heap_bytes": 144276,
+  "previous_home_free_heap_bytes": 33820,
+  "reclaimed_bytes": 110456,
+  "minimum_stack_free_bytes": 2064,
+  "core": {
+    "mesh_object": 16976,
+    "base_chat_mesh": 5476,
+    "contact_object": 184,
+    "contact_slots_including_anonymous": 8,
+    "contact_table": 1472,
+    "contact_sort_indexes": 0,
+    "channel_object": 65,
+    "channel_slots": 40,
+    "channel_table": 2600,
+    "connection_object": 48,
+    "connection_slots": 16,
+    "connection_table": 768,
+    "offline_frame": 177,
+    "offline_slots": 4,
+    "offline_queue": 708,
+    "offline_queue_used": 0,
+    "node_prefs": 2824,
+    "tracker_prefs": 72,
+    "tracker_reply_queue": 2448,
+    "nearby_discovery_table": 704,
+    "contacts_loaded": 0,
+    "command_buffer": 177,
+    "reply_buffer": 177,
+    "telemetry_object": 8
+  },
+  "ui": {
+    "ui_task": 11640,
+    "trail_store": 8248,
+    "keyboard": 976,
+    "home_screen": 184,
+    "settings_screen": 1612,
+    "messages_screen": 348,
+    "tools_screen": 296,
+    "games_controller": 160,
+    "ringtone_screen": 468,
+    "bot_screen": 48,
+    "admin_screen": 800,
+    "nearby_screen": 3688,
+    "dashboard_screen": 20,
+    "auto_advert_screen": 16,
+    "live_share_screen": 24,
+    "locator_screen": 1960,
+    "trail_screen": 640,
+    "compass_screen": 8,
+    "diagnostics_screen": 1092,
+    "repeater_screen": 340,
+    "clock_screen": 44,
+    "display_rotation_live": 0,
+    "joystick_rotation_live": 0,
+    "display_rotation_enabled": 0,
+    "joystick_rotation_enabled": 0,
+    "is_eink": 0,
+    "node_prefs": 2824,
+    "splash_screen": 36,
+    "display_width": 128,
+    "display_height": 64,
+    "trail_member": 8248,
+    "keyboard_member": 976,
+    "trail_point_count": 0,
+    "trail_recording": 0,
+    "trail_capacity": 512
+  },
+  "screens": [
+    {
+      "name": "Settings",
+      "active_free_heap": 142656,
+      "heap_cost": 1620,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Messages",
+      "active_free_heap": 143920,
+      "heap_cost": 356,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Tools",
+      "active_free_heap": 143972,
+      "heap_cost": 304,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Nearby contacts",
+      "active_free_heap": 140580,
+      "heap_cost": 3696,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "GPS trail",
+      "active_free_heap": 143628,
+      "heap_cost": 648,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Clock",
+      "active_free_heap": 144224,
+      "heap_cost": 52,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Bot",
+      "active_free_heap": 144220,
+      "heap_cost": 56,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Compass",
+      "active_free_heap": 144260,
+      "heap_cost": 16,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Ringtone editor",
+      "active_free_heap": 143800,
+      "heap_cost": 476,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Dashboard editor",
+      "active_free_heap": 144248,
+      "heap_cost": 28,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Automatic adverts",
+      "active_free_heap": 144252,
+      "heap_cost": 24,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Live location sharing",
+      "active_free_heap": 144244,
+      "heap_cost": 32,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Waypoint locator",
+      "active_free_heap": 142308,
+      "heap_cost": 1968,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Diagnostics",
+      "active_free_heap": 143176,
+      "heap_cost": 1100,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Repeater controls",
+      "active_free_heap": 143928,
+      "heap_cost": 348,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    }
+  ],
+  "games": [
+    {
+      "name": "Tic-Tac-Toe CPU",
+      "active_free_heap": 144108,
+      "heap_cost": 168,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Tic-Tac-Toe multiplayer menu",
+      "active_free_heap": 143076,
+      "heap_cost": 1200,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Snake",
+      "active_free_heap": 143296,
+      "heap_cost": 980,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Checkers CPU",
+      "active_free_heap": 143616,
+      "heap_cost": 660,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Battleship CPU",
+      "active_free_heap": 143664,
+      "heap_cost": 612,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Scorched Earth CPU",
+      "active_free_heap": 143728,
+      "heap_cost": 548,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    },
+    {
+      "name": "Holdem CPU",
+      "active_free_heap": 143976,
+      "heap_cost": 300,
+      "returned_home_free_heap": 144276,
+      "stack_min_free_bytes": 2064
+    }
+  ],
+  "contact_file_bytes_preserved": 18544,
+  "production_install": {
+    "firmware": "zygis-family",
+    "ordinary_contact_capacity": 0,
+    "channel_capacity": 40,
+    "application_usb_returned": true,
+    "clock_synced_to_utc": true,
+    "clock_persists_across_controlled_reboot": true,
+    "clock_error_seconds": 4.83,
+    "production_debug_handlers": false,
+    "post_flash_checksum_verification": false
+  }
+}

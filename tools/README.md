@@ -2,6 +2,38 @@
 
 Helper scripts that run on your computer, not on the device.
 
+For recurring firmware work, use `python3 scripts/zygis.py`:
+
+```sh
+python3 scripts/zygis.py build <environment> --clean
+python3 scripts/zygis.py test tracking
+python3 scripts/zygis.py test native
+python3 scripts/zygis.py test docs
+python3 scripts/zygis.py devices
+python3 scripts/zygis.py status-wio --serial <usb-serial>
+python3 scripts/zygis.py flash-wio <firmware.zip> --serial <usb-serial> --expect-version <version>
+python3 scripts/zygis.py test-wio-pair <usb-serial-a> <usb-serial-b>
+```
+
+Use `--project <path>` to build from another checkout. The USB commands need
+PySerial, which is included in PlatformIO's Python environment. Use `devices`
+to identify the intended unit, then choose an application DFU ZIP built for its
+display variant. The flash command checks the application version and compares
+identity, radio, channel, and tracker settings over USB after reboot.
+
+Run the pair test with both trackers on the same private channel, with distinct
+names and matching LoRa settings. It sends real test traffic, reads each
+device's companion inbox, and restores the original tracking policy and
+interval. It consumes pending companion messages, so use dedicated test units.
+Use `--identify` for a read-only preflight or `--configuration-only` to test
+channel isolation and persistence through reboot. The latter requires an unused
+channel slot on each unit and removes its temporary channels when done.
+`--discovery-probe` uses the USB peer as a controlled, on-air repeater response
+and checks duplicate suppression, receive RSSI, and the reported remote SNR.
+Use `--alarms` when someone can confirm the fullscreen alarms and dismiss them.
+The USB checks cannot hear the buzzer or verify physical dismissal. A fresh fix
+and repeater responses depend on the test location.
+
 | Tool | Purpose |
 | ---- | ------- |
 | `screenshot.py` | capture the device display over USB serial and save it as a PNG |

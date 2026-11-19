@@ -1,0 +1,83 @@
+{
+  "canvas": [
+    128,
+    64
+  ],
+  "pixel_mode": "1-bit",
+  "dynamic_text": "Existing MeshCore Solo font renderer; preview images are reference only",
+  "screens": [
+    {
+      "name": "trainer_hub",
+      "preview": "previews/01_trainer_hub_128x64.png",
+      "avatar_rect": [
+        3,
+        19,
+        24,
+        32
+      ],
+      "actions": [
+        "team",
+        "train",
+        "moves",
+        "ready"
+      ]
+    },
+    {
+      "name": "team_selection",
+      "preview": "previews/02_team_selection_128x64.png",
+      "row_height_px": 17,
+      "visible_rows": 3
+    },
+    {
+      "name": "monster_detail",
+      "preview": "previews/03_monster_detail_128x64.png",
+      "creature_rect": [
+        2,
+        17,
+        32,
+        32
+      ]
+    },
+    {
+      "name": "stat_training",
+      "preview": "previews/04_stat_training_128x64.png",
+      "row_height_px": 10,
+      "visible_rows": 4,
+      "rows_total": 6,
+      "scroll": true
+    },
+    {
+      "name": "move_loadout",
+      "preview": "previews/05_move_loadout_128x64.png",
+      "visible_rows": 4,
+      "free_to_swap": true
+    },
+    {
+      "name": "level_unlock",
+      "preview": "previews/06_level_unlock_128x64.png"
+    },
+    {
+      "name": "battle_ready",
+      "preview": "previews/07_battle_ready_128x64.png"
+    }
+  ],
+  "stat_names": [
+    "HP",
+    "ATK",
+    "DEF",
+    "FOC",
+    "WARD",
+    "SPD"
+  ],
+  "ordered_elements": [
+    "Ember",
+    "Tide",
+    "Thorn",
+    "Stone",
+    "Spark"
+  ],
+  "trainer_level_progress_frames": 4,
+  "upgrade_validation": "GDD 6.1; deduct XP only on explicit confirmation",
+  "move_swaps": "free for unlocked eligible moves",
+  "profile_storage": "GDD 12.1"
+}
